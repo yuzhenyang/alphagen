@@ -58,6 +58,8 @@ class QLibStockDataCalculator(AlphaCalculator):
             return self._calc_rIC(ensemble_value, self.target_value)
 
     def calc_pool_all_ret(self, exprs: List[Expression], weights: List[float]) -> Tuple[float, float]:
+        if len(exprs) <= 0:
+            return (0.0, 0.0)
         with torch.no_grad():
             ensemble_value = self.make_ensemble_alpha(exprs, weights)
             return self._calc_IC(ensemble_value, self.target_value), self._calc_rIC(ensemble_value, self.target_value)
