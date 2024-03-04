@@ -312,6 +312,18 @@ class Less(BinaryOperator):
         return self._lhs.is_featured and self._rhs.is_featured
 
 
+class LmRes(BinaryOperator):
+    def _apply(self, lhs: Tensor, rhs: Tensor) -> Tensor:
+        x_bias = torch.stack([lhs, torch.ones_like(lhs)], axis=1)
+        params, _ = torch.lstsq(rhs.unsqueeze(1), x_bias)
+        predicted_y = torch.matmul(x_bias, params)
+        return rhs - predicted_y.squeeze()
+
+    @property
+    def is_featured(self):
+        return self._lhs.is_featured and self._rhs.is_featured
+
+
 class Ref(RollingOperator):
     # Ref is not *really* a rolling operator, in that other rolling operators
     # deal with the values in (-dt, 0], while Ref only deal with the values
