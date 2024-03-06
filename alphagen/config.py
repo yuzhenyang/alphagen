@@ -9,7 +9,7 @@ OPERATORS = [
     Abs,  # Sign,
     Log,
     # Binary
-    Add, Sub, Mul, Div, Greater, Less,
+    Add, Sub, Mul, Div, Greater, Less, LmRes,
     # Rolling
     Ref, Mean, Sum, Std, Var,  # Skew, Kurt,
     Max, Min,

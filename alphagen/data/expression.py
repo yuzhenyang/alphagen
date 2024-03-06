@@ -319,10 +319,6 @@ class LmRes(BinaryOperator):
         predicted_y = torch.matmul(x_bias, params)
         return rhs - predicted_y.squeeze()
 
-    @property
-    def is_featured(self):
-        return self._lhs.is_featured and self._rhs.is_featured
-
 
 class Ref(RollingOperator):
     # Ref is not *really* a rolling operator, in that other rolling operators
@@ -462,7 +458,7 @@ Operators: List[Type[Expression]] = [
     # Unary
     Abs, Sign, Log, CSRank,
     # Binary
-    Add, Sub, Mul, Div, Pow, Greater, Less,
+    Add, Sub, Mul, Div, Pow, Greater, Less, LmRes,
     # Rolling
     Ref, Mean, Sum, Std, Var, Skew, Kurt, Max, Min,
     Med, Mad, Rank, Delta, WMA, EMA,
