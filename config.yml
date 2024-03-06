@@ -1,0 +1,8 @@
+seed: 42
+code: ZZ800
+pool: 100
+uri: /home/zyyu/.qlib/qlib_data/cne
+features:
+  - "wdb_ashareintensitytrend*"
+  - "wdb_ashareyield*"
+  - "md_std_vwp*" # for returns

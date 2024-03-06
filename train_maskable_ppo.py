@@ -1,21 +1,74 @@
 import json
+import yaml
+import fnmatch
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, List
+from enum import IntEnum
 from datetime import datetime
 import fire
-
 import numpy as np
-from sb3_contrib.ppo_mask import MaskablePPO
+import pdb
+import torch
+
+with open("config.yml", 'r') as file:
+        conf = yaml.safe_load(file)
+
+seed = conf['seed']
+code = conf['code']
+pool = conf['pool']
+step = conf['step'] if 'step' in conf else None
+if step is None:
+    step = max(1000_000, min(500_000, pool * pool * 2))
+
+if isinstance(seed, int):
+    seed = (seed, )
+
+provider_uri, feature_pattern = conf['uri'], conf['features']
+print("Provider URI: ", provider_uri)
+
+# get first sub directory
+features_path = provider_uri + "/features"
+contents = os.listdir(features_path)
+first_subdirectory = None
+for item in contents:
+    item_path = os.path.join(features_path, item)
+    if os.path.isdir(item_path):
+        first_subdirectory = item_path
+        break
+
+# get feature names from sub directory
+feature_names = []
+files = os.listdir(first_subdirectory)
+for file in files:
+    for pattern in feature_pattern:
+        if fnmatch.fnmatch(file, pattern):
+            feature_names.append(file[:-8]) # remove ".day.bin"
+            break
+
+feature_code = "from enum import IntEnum\n\nclass FeatureType(IntEnum):\n"
+for i, feature in enumerate(feature_names):
+    feature_code += f"    {feature.upper()} = {i}\n"
+exec(feature_code)
+test = f"print(FeatureType.{feature_names[0].upper()})"
+exec(test)
+
+with open("alphagen_qlib/features.py", "w") as ff:
+    ff.write(feature_code)
+
+# start imports here for class FeatureType(IntEnum) ready
 from stable_baselines3.common.callbacks import BaseCallback
+from sb3_contrib.ppo_mask import MaskablePPO
 from alphagen.data.calculator import AlphaCalculator
 
-from alphagen.data.expression import *
 from alphagen.models.alpha_pool import AlphaPool, AlphaPoolBase
 from alphagen.rl.env.wrapper import AlphaEnv
 from alphagen.rl.policy import LSTMSharedNet
 from alphagen.utils.random import reseed_everything
 from alphagen.rl.env.core import AlphaEnvCore
 from alphagen_qlib.calculator import QLibStockDataCalculator
+from alphagen_qlib.features import FeatureType
+
+from alphagen.data.expression import *
 
 
 class CustomCallback(BaseCallback):
@@ -23,8 +76,8 @@ class CustomCallback(BaseCallback):
                  save_freq: int,
                  show_freq: int,
                  save_path: str,
-                 valid_calculator: AlphaCalculator,
-                 test_calculator: AlphaCalculator,
+                 valid_calculator, # : AlphaCalculator,
+                 test_calculator, #: AlphaCalculator,
                  name_prefix: str = 'rl_model',
                  timestamp: Optional[str] = None,
                  verbose: int = 0):
@@ -81,11 +134,11 @@ class CustomCallback(BaseCallback):
         print('---------------------------------------------')
 
     @property
-    def pool(self) -> AlphaPoolBase:
+    def pool(self): # -> AlphaPoolBase:
         return self.env_core.pool
 
     @property
-    def env_core(self) -> AlphaEnvCore:
+    def env_core(self): # -> AlphaEnvCore:
         return self.training_env.envs[0].unwrapped  # type: ignore
 
 
@@ -93,24 +146,28 @@ def main(
     seed: int = 0,
     instruments: str = "csi300",
     pool_capacity: int = 10,
-    steps: int = 200_000
+    steps: int = 200_000,
 ):
     reseed_everything(seed)
 
+    # device = torch.device('cpu')
     device = torch.device('cuda:0')
-    close = Feature(FeatureType.CLOSE)
-    target = Ref(close, -20) / close - 1
+
+    #vwap = Feature(FeatureType.WDB_ASHAREENERGYINDEXADJ_BOLL_LOWER)
+    vwap = Feature(FeatureType.MD_STD_VWP)
+    target = Log(Ref(vwap, -6) / Ref(vwap, -1))
+    # target = Feature(FeatureType.VWAP)
 
     # You can re-implement AlphaCalculator instead of using QLibStockDataCalculator.
     data_train = StockData(instrument=instruments,
-                           start_time='2010-01-01',
-                           end_time='2019-12-31')
+                           start_time='2011-01-01',
+                           end_time='2018-12-31')
     data_valid = StockData(instrument=instruments,
-                           start_time='2020-01-01',
-                           end_time='2020-12-31')
+                           start_time='2019-01-01',
+                           end_time='2019-12-31')
     data_test = StockData(instrument=instruments,
-                          start_time='2021-01-01',
-                          end_time='2022-12-31')
+                          start_time='2020-01-01',
+                          end_time='2020-11-15')
     calculator_train = QLibStockDataCalculator(data_train, target)
     calculator_valid = QLibStockDataCalculator(data_valid, target)
     calculator_test = QLibStockDataCalculator(data_test, target)
@@ -129,7 +186,7 @@ def main(
     checkpoint_callback = CustomCallback(
         save_freq=10000,
         show_freq=10000,
-        save_path='/path/for/checkpoints',
+        save_path='log/checkpoints',
         valid_calculator=calculator_valid,
         test_calculator=calculator_test,
         name_prefix=name_prefix,
@@ -152,7 +209,7 @@ def main(
         gamma=1.,
         ent_coef=0.01,
         batch_size=128,
-        tensorboard_log='/path/for/tb/log',
+        tensorboard_log='log/tb/log',
         device=device,
         verbose=1,
     )
@@ -175,7 +232,10 @@ def fire_helper(
         10: 250_000,
         20: 300_000,
         50: 350_000,
-        100: 400_000
+        100: 400_000,
+        200: 400_000,
+        500: 500_000,
+        1000: 800_000
     }
     for _seed in seed:
         main(_seed,
@@ -184,6 +244,5 @@ def fire_helper(
              default_steps[int(pool)] if step is None else int(step)
              )
 
-
-if __name__ == '__main__':
-    fire.Fire(fire_helper)
+for _seed in seed:
+    main(_seed, code, pool, step)
