@@ -101,7 +101,7 @@ def ev():
         [{'pool': cap, 'res': try_pool(cap)} for cap in (10, 20, 50, 100)]
     )
     print(res)
-    dir_ = '/path/to/save/results'
+    dir_ = 'log/gpresults'
     os.makedirs(dir_, exist_ok=True)
     if generation % 2 == 0:
         with open(f'{dir_}/{generation}.json', 'w') as f:
