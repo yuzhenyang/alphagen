@@ -12,7 +12,7 @@ import csv
 import re
 
 
-ops = "$low $close $volume $high $open $vwap".split(' ')
+ops = "$md_std_low $md_std_cls $md_std_vol $md_std_hgh $md_std_opn $md_std_vwp".split(' ')
 lops = "md/std/Low md/std/Cls md/std/Vol md/std/Hgh md/std/Opn md/std/Vwp".split(' ')
 
 origs = "Mul Sub Ref Mean Med Sum Std Var Max Min Mad Delta WMA EMA Cov Corr Constant".split(' ')
@@ -37,8 +37,7 @@ def handle_wdb(e):
         return e
     sep = e.split('_')
     # pdb.set_trace()
-    return '/'.join(['wdb', wdbmaps[sep[1]], '_'.join(sep[2:]).upper()])
-
+    return '/'.join(['wdb', sep[1], '_'.join(sep[2:]).upper()])
 
 def myexpr(e):
     for o, r in zip(origs, repls):
