@@ -1,0 +1,605 @@
+{
+    "exprs": [
+        {
+            "id": 26,
+            "name": "alpha500.expr.26",
+            "expr": "Scale(Bound(Div(wdb/ashareyield/PCT_CHANGE_D,wdb/ashareyield/TURNOVER_D_FLOAT)))",
+            "coef": 0.040017109314492434
+        },
+        {
+            "id": 85,
+            "name": "alpha500.expr.85",
+            "expr": "Scale(Bound(TsStd(wdb/ashareyield/TURNOVER_D_FLOAT,10)))",
+            "coef": -0.030946875665336854
+        },
+        {
+            "id": 46,
+            "name": "alpha500.expr.46",
+            "expr": "Scale(Bound(Minus(wdb/ashareintensitytrend/MACD_MACD,Div(wdb/ashareyield/PCT_CHANGE_D,wdb/ashareintensitytrend/BOTTOMING_D))))",
+            "coef": 0.028011276210232368
+        },
+        {
+            "id": 55,
+            "name": "alpha500.expr.55",
+            "expr": "Scale(Bound(Mult(Broadcast(-10.0),Log(md/std/Vwp))))",
+            "coef": 0.023867606561797476
+        },
+        {
+            "id": 13,
+            "name": "alpha500.expr.13",
+            "expr": "Scale(Bound(Add(wdb/ashareintensitytrend/BOTTOMING_B,wdb/ashareyield/PCT_CHANGE_M)))",
+            "coef": -0.017730084468983002
+        },
+        {
+            "id": 47,
+            "name": "alpha500.expr.47",
+            "expr": "Scale(Bound(TsMax(wdb/ashareyield/PCT_CHANGE_W,10)))",
+            "coef": 0.01732376858833876
+        },
+        {
+            "id": 73,
+            "name": "alpha500.expr.73",
+            "expr": "Scale(Bound(Abs(Div(wdb/ashareyield/TURNOVER_M_AVE_FLOAT,wdb/ashareyield/VOLUME_M))))",
+            "coef": 0.015867301468017604
+        },
+        {
+            "id": 69,
+            "name": "alpha500.expr.69",
+            "expr": "Scale(Bound(Mult(Broadcast(-1.0),Abs(Mult(wdb/ashareyield/BETA_DAY_2Y,Div(Mult(wdb/ashareintensitytrend/TRIX,Add(wdb/ashareyield/PCT_CHANGE_AVE_24M,wdb/ashareintensitytrend/EXPMA)),wdb/ashareyield/BETA_DAY_2Y))))))",
+            "coef": -0.015555037095694177
+        },
+        {
+            "id": 79,
+            "name": "alpha500.expr.79",
+            "expr": "Scale(Bound(Greater(wdb/ashareyield/PCT_CHANGE_M,wdb/ashareyield/TURNOVER_D_FLOAT)))",
+            "coef": 0.014773848775478408
+        },
+        {
+            "id": 19,
+            "name": "alpha500.expr.19",
+            "expr": "Scale(Bound(Add(wdb/ashareintensitytrend/MTM,wdb/ashareyield/ALPHA_24M)))",
+            "coef": -0.014022634915932905
+        },
+        {
+            "id": 25,
+            "name": "alpha500.expr.25",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/MA_5D,wdb/ashareyield/PCT_CHANGE_W)))",
+            "coef": -0.012772794087083974
+        },
+        {
+            "id": 90,
+            "name": "alpha500.expr.90",
+            "expr": "Scale(Bound(Mult(wdb/ashareyield/TURNOVER_M_FLOAT,md/std/Vwp)))",
+            "coef": -0.01272076704135034
+        },
+        {
+            "id": 62,
+            "name": "alpha500.expr.62",
+            "expr": "Scale(Bound(Minus(wdb/ashareyield/TURNOVER_W,wdb/ashareyield/PCT_CHANGE_D)))",
+            "coef": -0.012180449728053782
+        },
+        {
+            "id": 42,
+            "name": "alpha500.expr.42",
+            "expr": "Scale(Bound(Less(wdb/ashareyield/BETA_DAY_2Y,wdb/ashareintensitytrend/MARKET)))",
+            "coef": 0.012143499558202524
+        },
+        {
+            "id": 89,
+            "name": "alpha500.expr.89",
+            "expr": "Scale(Bound(Mult(Less(Broadcast(5.0),Mult(Mult(Less(Mult(wdb/ashareyield/PCT_CHANGE_D,wdb/ashareyield/ALPHA_DAY_2Y),Broadcast(-1.0)),wdb/ashareintensitytrend/WEAKKNESS),Broadcast(-10.0))),wdb/ashareyield/BETA_DAY_2Y)))",
+            "coef": -0.010831244891154524
+        },
+        {
+            "id": 97,
+            "name": "alpha500.expr.97",
+            "expr": "Scale(Bound(Mult(wdb/ashareyield/TURNOVER_W_FLOAT,Abs(Add(Minus(wdb/ashareyield/ALPHA_100W,Mult(wdb/ashareyield/TURNOVER_W_FLOAT,wdb/ashareyield/PCT_CHANGE_D)),wdb/ashareintensitytrend/STRENGTH)))))",
+            "coef": 0.01031639761691885
+        },
+        {
+            "id": 76,
+            "name": "alpha500.expr.76",
+            "expr": "Scale(Bound(Less(wdb/ashareintensitytrend/BBI,wdb/ashareintensitytrend/DMI_PDI)))",
+            "coef": -0.010164994026138392
+        },
+        {
+            "id": 12,
+            "name": "alpha500.expr.12",
+            "expr": "Scale(Bound(Mult(Broadcast(0.5),Abs(wdb/ashareyield/ALPHA_100W))))",
+            "coef": -0.009799901897638375
+        },
+        {
+            "id": 33,
+            "name": "alpha500.expr.33",
+            "expr": "Scale(Bound(Mult(Broadcast(-5.0),Div(wdb/ashareintensitytrend/MACD_DIFF,Less(wdb/ashareintensitytrend/BBI,Mult(wdb/ashareyield/TURNOVER_M_AVE_FLOAT,Minus(Div(wdb/ashareintensitytrend/MA_60D,Abs(Div(wdb/ashareyield/TURNOVER_D,wdb/ashareyield/TURNOVER_W))),wdb/ashareyield/VOLUME_W)))))))",
+            "coef": 0.009552563373642102
+        },
+        {
+            "id": 30,
+            "name": "alpha500.expr.30",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/DMI_MDI,wdb/ashareyield/PCT_CHANGE_M)))",
+            "coef": 0.009498731964447603
+        },
+        {
+            "id": 88,
+            "name": "alpha500.expr.88",
+            "expr": "Scale(Bound(Mult(Broadcast(5.0),Mult(wdb/ashareintensitytrend/MA_120D,wdb/ashareyield/TURNOVER_D))))",
+            "coef": -0.009346549148185638
+        },
+        {
+            "id": 17,
+            "name": "alpha500.expr.17",
+            "expr": "Scale(Bound(Minus(Less(Broadcast(-10.0),Mult(Log(wdb/ashareyield/VARIANCE_24M),wdb/ashareintensitytrend/EXPMA)),wdb/ashareyield/PCT_CHANGE_D)))",
+            "coef": 0.009032662415089866
+        },
+        {
+            "id": 59,
+            "name": "alpha500.expr.59",
+            "expr": "Scale(Bound(Div(wdb/ashareintensitytrend/MTM,wdb/ashareyield/TURNOVER_M_AVE)))",
+            "coef": 0.009031371319348704
+        },
+        {
+            "id": 67,
+            "name": "alpha500.expr.67",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/BOTTOMING_D,wdb/ashareyield/BETA_DAY_2Y)))",
+            "coef": 0.008888490571192053
+        },
+        {
+            "id": 64,
+            "name": "alpha500.expr.64",
+            "expr": "Scale(Bound(Mult(Broadcast(-0.01),wdb/ashareintensitytrend/TRIX)))",
+            "coef": 0.00875043125226557
+        },
+        {
+            "id": 3,
+            "name": "alpha500.expr.3",
+            "expr": "Scale(Bound(wdb/ashareintensitytrend/TRIX))",
+            "coef": -0.00868040545257849
+        },
+        {
+            "id": 77,
+            "name": "alpha500.expr.77",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/BOTTOMING_D,Less(wdb/ashareyield/ALPHA_24M,wdb/ashareyield/STD_DEVIATION_100W))))",
+            "coef": 0.008259045905817199
+        },
+        {
+            "id": 95,
+            "name": "alpha500.expr.95",
+            "expr": "Scale(Bound(Mult(Less(Broadcast(-10.0),wdb/ashareyield/STD_DEVIATION_24M),wdb/ashareintensitytrend/TRIX)))",
+            "coef": 0.00819388024358204
+        },
+        {
+            "id": 75,
+            "name": "alpha500.expr.75",
+            "expr": "Scale(Bound(md/std/Vwp))",
+            "coef": -0.008163731778096286
+        },
+        {
+            "id": 99,
+            "name": "alpha500.expr.99",
+            "expr": "Scale(Bound(Less(wdb/ashareyield/TURNOVER_W,wdb/ashareyield/PCT_CHANGE_W)))",
+            "coef": -0.008088402900289286
+        },
+        {
+            "id": 28,
+            "name": "alpha500.expr.28",
+            "expr": "Scale(Bound(Mult(wdb/ashareyield/STD_DEVIATION_100W,Div(Abs(Mult(wdb/ashareyield/PCT_CHANGE_M,Mult(Less(Mult(Add(wdb/ashareyield/STD_DEVIATION_24M,Broadcast(30.0)),Div(wdb/ashareyield/VARIANCE_100W,wdb/ashareyield/TURNOVER_M_FLOAT)),wdb/ashareyield/STD_DEVIATION_24M),Log(md/std/Vwp)))),wdb/ashareintensitytrend/MA_120D))))",
+            "coef": 0.007863615238746246
+        },
+        {
+            "id": 18,
+            "name": "alpha500.expr.18",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/STRENGTH,Less(wdb/ashareyield/TURNOVER_D_FLOAT,wdb/ashareintensitytrend/MTM))))",
+            "coef": -0.007701201907729852
+        },
+        {
+            "id": 58,
+            "name": "alpha500.expr.58",
+            "expr": "Scale(Bound(TsStd(wdb/ashareintensitytrend/TRIX,10)))",
+            "coef": 0.007653022611050489
+        },
+        {
+            "id": 80,
+            "name": "alpha500.expr.80",
+            "expr": "Scale(Bound(Add(Broadcast(-10.0),Div(Div(wdb/ashareintensitytrend/DMA_DDD,wdb/ashareyield/VARIANCE_100W),Less(Minus(Less(TsMin(wdb/ashareintensitytrend/STRENGTH,10),Broadcast(1.0)),wdb/ashareintensitytrend/MA_10D),wdb/ashareyield/TURNOVER_M_AVE_FLOAT)))))",
+            "coef": -0.007485665243173195
+        },
+        {
+            "id": 48,
+            "name": "alpha500.expr.48",
+            "expr": "Scale(Bound(TsMean(wdb/ashareyield/PCT_CHANGE_M,50)))",
+            "coef": -0.007445585870805159
+        },
+        {
+            "id": 66,
+            "name": "alpha500.expr.66",
+            "expr": "Scale(Bound(Div(Less(Broadcast(2.0),wdb/ashareintensitytrend/MA_10D),wdb/ashareyield/BETA_DAY_2Y)))",
+            "coef": -0.0073918116223915045
+        },
+        {
+            "id": 56,
+            "name": "alpha500.expr.56",
+            "expr": "Scale(Bound(Mult(Broadcast(-5.0),Mult(wdb/ashareintensitytrend/EXPMA,Div(Minus(wdb/ashareyield/PCT_CHANGE_W,Mult(Broadcast(1.0),Add(Abs(wdb/ashareintensitytrend/DMI_PDI),wdb/ashareintensitytrend/MACD_MACD))),wdb/ashareintensitytrend/MA_60D)))))",
+            "coef": 0.007181050795472537
+        },
+        {
+            "id": 53,
+            "name": "alpha500.expr.53",
+            "expr": "Scale(Bound(Mult(wdb/ashareyield/ALPHA_24M,Abs(Abs(Mult(wdb/ashareintensitytrend/DMA_AMA,Greater(wdb/ashareyield/BETA_24M,Broadcast(2.0))))))))",
+            "coef": 0.006618886632585608
+        },
+        {
+            "id": 100,
+            "name": "alpha500.expr.100",
+            "expr": "Scale(Bound(Mult(Broadcast(-5.0),Mult(TsCov(wdb/ashareintensitytrend/MACD_MACD,Div(TsWma(wdb/ashareintensitytrend/MA_120D,10),Broadcast(0.01)),40),wdb/ashareintensitytrend/BOTTOMING_D))))",
+            "coef": 0.0065863168899239
+        },
+        {
+            "id": 8,
+            "name": "alpha500.expr.8",
+            "expr": "Scale(Bound(Minus(Greater(Broadcast(-10.0),Abs(Minus(Log(TsDelay(wdb/ashareintensitytrend/DMI_ADX,30)),wdb/ashareintensitytrend/DMA_AMA))),Div(wdb/ashareintensitytrend/TRIX,Broadcast(-10.0)))))",
+            "coef": -0.006513705328187752
+        },
+        {
+            "id": 5,
+            "name": "alpha500.expr.5",
+            "expr": "Scale(Bound(TsVar(wdb/ashareyield/TURNOVER_D_FLOAT,30)))",
+            "coef": -0.0064132833492717796
+        },
+        {
+            "id": 92,
+            "name": "alpha500.expr.92",
+            "expr": "Scale(Bound(Abs(Mult(wdb/ashareyield/ALPHA_24M,wdb/ashareintensitytrend/MTM))))",
+            "coef": 0.006341206708047404
+        },
+        {
+            "id": 52,
+            "name": "alpha500.expr.52",
+            "expr": "Scale(Bound(TsCorr(wdb/ashareintensitytrend/TRIX,wdb/ashareyield/TURNOVER_W_FLOAT,10)))",
+            "coef": -0.00629844478254706
+        },
+        {
+            "id": 61,
+            "name": "alpha500.expr.61",
+            "expr": "Scale(Bound(Less(Mult(Broadcast(30.0),wdb/ashareintensitytrend/DMA_DDD),Mult(Broadcast(-0.01),Minus(wdb/ashareintensitytrend/STRENGTH,Div(Div(wdb/ashareyield/VOLUME_M,Broadcast(1.0)),Add(wdb/ashareyield/VOLUME_W,Broadcast(1.0))))))))",
+            "coef": 0.006057550043422235
+        },
+        {
+            "id": 15,
+            "name": "alpha500.expr.15",
+            "expr": "Scale(Bound(Div(Broadcast(5.0),Mult(wdb/ashareyield/VARIANCE_24M,Abs(Div(wdb/ashareyield/TURNOVER_M_AVE_FLOAT,Div(wdb/ashareyield/TURNOVER_D_FLOAT,Greater(Broadcast(-2.0),Less(wdb/ashareyield/TURNOVER_D_FLOAT,Abs(wdb/ashareintensitytrend/DMI_MDI))))))))))",
+            "coef": -0.0059749097001476886
+        },
+        {
+            "id": 21,
+            "name": "alpha500.expr.21",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/MACD_DIFF,TsSum(Mult(wdb/ashareyield/BETA_DAY_1Y,wdb/ashareyield/VOLUME_W),30))))",
+            "coef": -0.005792544821345288
+        },
+        {
+            "id": 91,
+            "name": "alpha500.expr.91",
+            "expr": "Scale(Bound(TsMad(wdb/ashareyield/TURNOVER_M_FLOAT,30)))",
+            "coef": -0.005761057781365311
+        },
+        {
+            "id": 23,
+            "name": "alpha500.expr.23",
+            "expr": "Scale(Bound(wdb/ashareyield/ALPHA_DAY_1Y))",
+            "coef": 0.005461725286892597
+        },
+        {
+            "id": 22,
+            "name": "alpha500.expr.22",
+            "expr": "Scale(Bound(Mult(wdb/ashareyield/ALPHA_DAY_1Y,wdb/ashareyield/PCT_CHANGE_M)))",
+            "coef": -0.005251468445128598
+        },
+        {
+            "id": 74,
+            "name": "alpha500.expr.74",
+            "expr": "Scale(Bound(Mult(Div(Broadcast(10.0),wdb/ashareyield/STD_DEVIATION_100W),wdb/ashareyield/PCT_CHANGE_D)))",
+            "coef": -0.005102765655657903
+        },
+        {
+            "id": 83,
+            "name": "alpha500.expr.83",
+            "expr": "Scale(Bound(Div(wdb/ashareintensitytrend/BOTTOMING_D,Div(wdb/ashareyield/STD_DEVIATION_24M,wdb/ashareintensitytrend/MACD_MACD))))",
+            "coef": 0.005041072598928961
+        },
+        {
+            "id": 29,
+            "name": "alpha500.expr.29",
+            "expr": "Scale(Bound(Abs(wdb/ashareintensitytrend/TRMA)))",
+            "coef": 0.004972956536224007
+        },
+        {
+            "id": 54,
+            "name": "alpha500.expr.54",
+            "expr": "Scale(Bound(Div(Broadcast(-5.0),Div(wdb/ashareyield/STD_DEVIATION_100W,wdb/ashareintensitytrend/MA_60D))))",
+            "coef": -0.004776710987625528
+        },
+        {
+            "id": 16,
+            "name": "alpha500.expr.16",
+            "expr": "Scale(Bound(Mult(Broadcast(10.0),Mult(wdb/ashareintensitytrend/BOTTOMING_B,wdb/ashareintensitytrend/PRICEOSC))))",
+            "coef": 0.004716479282418709
+        },
+        {
+            "id": 34,
+            "name": "alpha500.expr.34",
+            "expr": "Scale(Bound(Div(wdb/ashareyield/TURNOVER_W,Mult(wdb/ashareyield/VARIANCE_100W,TsMean(Mult(Mult(wdb/ashareyield/TURNOVER_M_AVE_FLOAT,Less(Minus(wdb/ashareintensitytrend/MA_60D,wdb/ashareyield/STD_DEVIATION_100W),Less(wdb/ashareintensitytrend/MTM_MTMMA,wdb/ashareyield/TURNOVER_M_AVE))),wdb/ashareyield/VOLUME_W),10)))))",
+            "coef": 0.004675321230726597
+        },
+        {
+            "id": 65,
+            "name": "alpha500.expr.65",
+            "expr": "Scale(Bound(Mult(wdb/ashareyield/PCT_CHANGE_M,wdb/ashareintensitytrend/MA_60D)))",
+            "coef": -0.004639311961206252
+        },
+        {
+            "id": 51,
+            "name": "alpha500.expr.51",
+            "expr": "Scale(Bound(Add(Broadcast(1.0),TsMin(wdb/ashareyield/TURNOVER_D,50))))",
+            "coef": 0.004626608730215444
+        },
+        {
+            "id": 37,
+            "name": "alpha500.expr.37",
+            "expr": "Scale(Bound(TsDelay(wdb/ashareyield/BETA_DAY_2Y,50)))",
+            "coef": -0.004623989001601052
+        },
+        {
+            "id": 35,
+            "name": "alpha500.expr.35",
+            "expr": "Scale(Bound(Mult(Less(Broadcast(0.5),Add(wdb/ashareintensitytrend/MA_20D,Broadcast(-30.0))),TsDelay(wdb/ashareyield/ALPHA_DAY_2Y,20))))",
+            "coef": -0.0046077552869339435
+        },
+        {
+            "id": 20,
+            "name": "alpha500.expr.20",
+            "expr": "Scale(Bound(Log(Minus(TsDelta(wdb/ashareyield/VOLUME_W,50),Minus(wdb/ashareintensitytrend/DMI_PDI,Broadcast(-10.0))))))",
+            "coef": -0.004591326179311876
+        },
+        {
+            "id": 96,
+            "name": "alpha500.expr.96",
+            "expr": "Scale(Bound(Mult(Broadcast(-5.0),Less(wdb/ashareintensitytrend/TRMA,TsCov(wdb/ashareyield/VOLUME_W,Mult(wdb/ashareyield/VARIANCE_100W,wdb/ashareintensitytrend/BBI),50)))))",
+            "coef": -0.0045615557861747105
+        },
+        {
+            "id": 14,
+            "name": "alpha500.expr.14",
+            "expr": "Scale(Bound(Div(wdb/ashareyield/TURNOVER_D,wdb/ashareyield/TURNOVER_W)))",
+            "coef": -0.004560857200180064
+        },
+        {
+            "id": 81,
+            "name": "alpha500.expr.81",
+            "expr": "Scale(Bound(TsCov(wdb/ashareyield/STD_DEVIATION_24M,Div(TsMean(Add(wdb/ashareyield/BETA_24M,wdb/ashareyield/BETA_DAY_2Y),30),wdb/ashareintensitytrend/MACD_DIFF),30)))",
+            "coef": 0.004460145249134489
+        },
+        {
+            "id": 1,
+            "name": "alpha500.expr.1",
+            "expr": "Scale(Bound(Add(Broadcast(1.0),TsEma(wdb/ashareyield/VOLUME_M,10))))",
+            "coef": -0.004425939173499285
+        },
+        {
+            "id": 71,
+            "name": "alpha500.expr.71",
+            "expr": "Scale(Bound(Minus(wdb/ashareintensitytrend/MA_30D,Mult(wdb/ashareyield/PCT_CHANGE_M,Mult(wdb/ashareyield/VARIANCE_100W,Mult(Div(Mult(wdb/ashareintensitytrend/BOTTOMING_D,Broadcast(30.0)),wdb/ashareyield/TURNOVER_W_AVE_FLOAT),wdb/ashareintensitytrend/MA_60D))))))",
+            "coef": -0.004401906597530119
+        },
+        {
+            "id": 39,
+            "name": "alpha500.expr.39",
+            "expr": "Scale(Bound(Minus(Broadcast(2.0),Mult(TsMin(Mult(wdb/ashareyield/AMOUNT_W,wdb/ashareyield/ALPHA_100W),50),Broadcast(30.0)))))",
+            "coef": -0.00437383246350706
+        },
+        {
+            "id": 82,
+            "name": "alpha500.expr.82",
+            "expr": "Scale(Bound(Mult(Broadcast(10.0),Div(wdb/ashareintensitytrend/TRMA,Mult(wdb/ashareintensitytrend/BOTTOMING_D,wdb/ashareintensitytrend/BOTTOMING_B)))))",
+            "coef": -0.0043726461647790775
+        },
+        {
+            "id": 40,
+            "name": "alpha500.expr.40",
+            "expr": "Scale(Bound(Mult(Broadcast(-1.0),Mult(Abs(wdb/ashareyield/PCT_CHANGE_AVE_24M),Abs(Div(Less(wdb/ashareintensitytrend/PRICEOSC,Broadcast(-1.0)),Add(TsMedian(wdb/ashareyield/BETA_DAY_2Y,30),wdb/ashareyield/TURNOVER_M)))))))",
+            "coef": 0.004136110359891318
+        },
+        {
+            "id": 41,
+            "name": "alpha500.expr.41",
+            "expr": "Scale(Bound(Less(wdb/ashareyield/PCT_CHANGE_AVE_24M,Mult(wdb/ashareyield/ALPHA_24M,wdb/ashareyield/PCT_CHANGE_W))))",
+            "coef": -0.004074919306165948
+        },
+        {
+            "id": 43,
+            "name": "alpha500.expr.43",
+            "expr": "Scale(Bound(Minus(Broadcast(30.0),TsStd(wdb/ashareintensitytrend/DMI_ADX,30))))",
+            "coef": -0.003827781991461389
+        },
+        {
+            "id": 93,
+            "name": "alpha500.expr.93",
+            "expr": "Scale(Bound(Mult(Broadcast(0.5),Mult(Div(Less(TsEma(Less(Div(wdb/ashareyield/ALPHA_DAY_1Y,wdb/ashareintensitytrend/MA_10D),Abs(wdb/ashareintensitytrend/DMA_AMA)),10),Broadcast(30.0)),TsDelay(wdb/ashareintensitytrend/MA_20D,10)),Log(wdb/ashareintensitytrend/DMI_ADX)))))",
+            "coef": 0.0037015197408516312
+        },
+        {
+            "id": 45,
+            "name": "alpha500.expr.45",
+            "expr": "Scale(Bound(Mult(wdb/ashareyield/TURNOVER_W,Mult(Broadcast(0.01),TsStd(Mult(wdb/ashareintensitytrend/MTM_MTMMA,Div(wdb/ashareintensitytrend/MACD_DEA,Minus(Minus(wdb/ashareyield/PCT_CHANGE_D,wdb/ashareintensitytrend/MA_10D),TsDelay(wdb/ashareintensitytrend/STRENGTH,30)))),20)))))",
+            "coef": 0.003685171022576202
+        },
+        {
+            "id": 10,
+            "name": "alpha500.expr.10",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/BOTTOMING_B,Abs(wdb/ashareintensitytrend/BBI))))",
+            "coef": -0.0035510809818793754
+        },
+        {
+            "id": 32,
+            "name": "alpha500.expr.32",
+            "expr": "Scale(Bound(Div(Less(Broadcast(-0.01),wdb/ashareyield/STD_DEVIATION_24M),wdb/ashareintensitytrend/DMI_ADX)))",
+            "coef": 0.0035394572800993484
+        },
+        {
+            "id": 78,
+            "name": "alpha500.expr.78",
+            "expr": "Scale(Bound(Log(Add(Broadcast(-5.0),wdb/ashareyield/STD_DEVIATION_24M))))",
+            "coef": -0.0033929938127444845
+        },
+        {
+            "id": 11,
+            "name": "alpha500.expr.11",
+            "expr": "Scale(Bound(Mult(Broadcast(5.0),Mult(md/std/Vwp,TsCov(Add(wdb/ashareyield/ALPHA_DAY_2Y,Div(wdb/ashareintensitytrend/BOTTOMING_D,wdb/ashareyield/TURNOVER_W_AVE)),TsMean(wdb/ashareyield/VOLUME_W,30),30)))))",
+            "coef": 0.0033435497522489115
+        },
+        {
+            "id": 4,
+            "name": "alpha500.expr.4",
+            "expr": "Scale(Bound(Mult(Less(Broadcast(5.0),wdb/ashareintensitytrend/MTM),wdb/ashareintensitytrend/WEAKKNESS)))",
+            "coef": -0.0032552375168073133
+        },
+        {
+            "id": 7,
+            "name": "alpha500.expr.7",
+            "expr": "Scale(Bound(Mult(Mult(wdb/ashareintensitytrend/DMA_AMA,wdb/ashareyield/BETA_DAY_1Y),wdb/ashareintensitytrend/MACD_MACD)))",
+            "coef": 0.0032244359244216546
+        },
+        {
+            "id": 36,
+            "name": "alpha500.expr.36",
+            "expr": "Scale(Bound(Minus(Broadcast(10.0),Mult(wdb/ashareintensitytrend/MACD_DIFF,Mult(Broadcast(-0.01),wdb/ashareyield/PCT_CHANGE_D)))))",
+            "coef": -0.0031831441543928073
+        },
+        {
+            "id": 94,
+            "name": "alpha500.expr.94",
+            "expr": "Scale(Bound(Less(wdb/ashareintensitytrend/BOTTOMING_D,wdb/ashareyield/BETA_DAY_2Y)))",
+            "coef": 0.003146361159098792
+        },
+        {
+            "id": 27,
+            "name": "alpha500.expr.27",
+            "expr": "Scale(Bound(TsMean(wdb/ashareintensitytrend/STRENGTH,30)))",
+            "coef": 0.0030826732984836707
+        },
+        {
+            "id": 63,
+            "name": "alpha500.expr.63",
+            "expr": "Scale(Bound(Div(wdb/ashareintensitytrend/SAR,Mult(wdb/ashareintensitytrend/MA_250D,Broadcast(5.0)))))",
+            "coef": -0.00308077461441212
+        },
+        {
+            "id": 49,
+            "name": "alpha500.expr.49",
+            "expr": "Scale(Bound(TsCorr(wdb/ashareintensitytrend/MA_5D,Greater(wdb/ashareintensitytrend/MA_10D,TsDelay(wdb/ashareintensitytrend/PRICEOSC,50)),20)))",
+            "coef": -0.0030446925116463263
+        },
+        {
+            "id": 98,
+            "name": "alpha500.expr.98",
+            "expr": "Scale(Bound(Log(wdb/ashareintensitytrend/MACD_MACD)))",
+            "coef": -0.0028990327983309714
+        },
+        {
+            "id": 2,
+            "name": "alpha500.expr.2",
+            "expr": "Scale(Bound(Div(Broadcast(30.0),Mult(wdb/ashareyield/BETA_DAY_2Y,wdb/ashareyield/VARIANCE_100W))))",
+            "coef": 0.0028797356795494996
+        },
+        {
+            "id": 70,
+            "name": "alpha500.expr.70",
+            "expr": "Scale(Bound(Div(Less(Greater(Broadcast(-30.0),wdb/ashareyield/TURNOVER_M_FLOAT),Mult(Div(wdb/ashareyield/BETA_24M,wdb/ashareintensitytrend/MA_20D),Mult(wdb/ashareyield/BETA_100W,wdb/ashareintensitytrend/DMI_PDI))),wdb/ashareintensitytrend/MA_60D)))",
+            "coef": -0.0028588315043291267
+        },
+        {
+            "id": 86,
+            "name": "alpha500.expr.86",
+            "expr": "Scale(Bound(TsMean(wdb/ashareyield/VOLUME_W,50)))",
+            "coef": -0.0028149018699546256
+        },
+        {
+            "id": 24,
+            "name": "alpha500.expr.24",
+            "expr": "Scale(Bound(wdb/ashareintensitytrend/DMI_MDI))",
+            "coef": -0.0027784966301353823
+        },
+        {
+            "id": 44,
+            "name": "alpha500.expr.44",
+            "expr": "Scale(Bound(Minus(Broadcast(-0.01),Minus(wdb/ashareintensitytrend/MA_250D,wdb/ashareintensitytrend/BBI))))",
+            "coef": -0.002702386041699394
+        },
+        {
+            "id": 38,
+            "name": "alpha500.expr.38",
+            "expr": "Scale(Bound(Log(wdb/ashareintensitytrend/MACD_DIFF)))",
+            "coef": -0.0026464137314960753
+        },
+        {
+            "id": 50,
+            "name": "alpha500.expr.50",
+            "expr": "Scale(Bound(wdb/ashareyield/BETA_24M))",
+            "coef": -0.0025661334768961553
+        },
+        {
+            "id": 84,
+            "name": "alpha500.expr.84",
+            "expr": "Scale(Bound(Add(Broadcast(5.0),TsDelay(wdb/ashareyield/TURNOVER_D_FLOAT,50))))",
+            "coef": -0.0024629241766073863
+        },
+        {
+            "id": 31,
+            "name": "alpha500.expr.31",
+            "expr": "Scale(Bound(Mult(wdb/ashareintensitytrend/BOTTOMING_B,Mult(wdb/ashareyield/TURNOVER_M_AVE_FLOAT,Broadcast(0.5)))))",
+            "coef": -0.0021734810273465
+        },
+        {
+            "id": 60,
+            "name": "alpha500.expr.60",
+            "expr": "Scale(Bound(Add(Broadcast(-2.0),Mult(Mult(Mult(TsMean(wdb/ashareyield/PCT_CHANGE_M,50),wdb/ashareyield/VARIANCE_24M),TsMean(wdb/ashareintensitytrend/DMA_DDD,40)),wdb/ashareintensitytrend/MACD_DEA))))",
+            "coef": -0.00217191089864326
+        },
+        {
+            "id": 87,
+            "name": "alpha500.expr.87",
+            "expr": "Scale(Bound(Mult(Broadcast(-2.0),Mult(TsMean(wdb/ashareintensitytrend/DMI_ADXR,50),wdb/ashareintensitytrend/TRIX))))",
+            "coef": 0.0020008264879941974
+        },
+        {
+            "id": 57,
+            "name": "alpha500.expr.57",
+            "expr": "Scale(Bound(Mult(Broadcast(-1.0),TsDelta(wdb/ashareyield/PCT_CHANGE_AVE_24M,20))))",
+            "coef": 0.0018856492384383885
+        },
+        {
+            "id": 6,
+            "name": "alpha500.expr.6",
+            "expr": "Scale(Bound(Mult(Broadcast(-1.0),wdb/ashareyield/ALPHA_DAY_1Y)))",
+            "coef": -0.001742806543891209
+        },
+        {
+            "id": 9,
+            "name": "alpha500.expr.9",
+            "expr": "Scale(Bound(Div(wdb/ashareintensitytrend/MTM_MTMMA,wdb/ashareyield/TURNOVER_M)))",
+            "coef": 0.0017317064391659585
+        },
+        {
+            "id": 72,
+            "name": "alpha500.expr.72",
+            "expr": "Scale(Bound(Add(Broadcast(0.5),Minus(wdb/ashareyield/ALPHA_24M,Div(wdb/ashareyield/AMOUNT_M,Less(Less(wdb/ashareintensitytrend/MA_5D,wdb/ashareyield/PCT_CHANGE_AVE_24M),Mult(wdb/ashareyield/TURNOVER_M_AVE_FLOAT,Broadcast(0.01))))))))",
+            "coef": -0.001672088458551629
+        },
+        {
+            "id": 68,
+            "name": "alpha500.expr.68",
+            "expr": "Scale(Bound(wdb/ashareintensitytrend/STRENGTH))",
+            "coef": 0.0013873017653226862
+        }
+    ],
+    "vid": 10101
+}
