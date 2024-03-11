@@ -1,6 +1,12 @@
 seed: 42
-code: ZZ800
-pool: 100
+code: CSI300
+pool: 400
+step: 1000000
+
+train: "20110101-20201220"
+verify: "20210101-0630"
+test: "20210701-20220630"
+
 uri: /home/zyyu/.qlib/qlib_data/cne
 features:
   - "wdb_ashareintensitytrend*"

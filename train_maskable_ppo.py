@@ -10,21 +10,35 @@ import numpy as np
 import pdb
 import torch
 
-with open("config.yml", 'r') as file:
-        conf = yaml.safe_load(file)
 
-seed = conf['seed']
-code = conf['code']
-pool = conf['pool']
+def format_date(insr):
+    b, e = insr.split('-')
+    if len(b) != 8 or len(e) > 8:
+        raise f"Date range: {insr} format error"
+    if len(e) < 8:
+        e = b[:(8-len(e))] + e
+    return (f"{b[0:4]}-{b[4:6]}-{b[6:8]}", f"{e[0:4]}-{e[4:6]}-{e[6:8]}")
+
+
+with open("config.yml", 'r') as file:
+    conf = yaml.safe_load(file)
+
+seed, code, pool = conf['seed'], conf['code'], conf['pool']
+traindr, verdr, testdr = format_date(conf['train']), format_date(conf['verify']), format_date(conf['test'])
+
 step = conf['step'] if 'step' in conf else None
 if step is None:
-    step = max(1000_000, min(500_000, pool * pool * 2))
+    step = min(1000_000, max(500_000, pool * pool * 10))
 
 if isinstance(seed, int):
     seed = (seed, )
 
 provider_uri, feature_pattern = conf['uri'], conf['features']
 print("Provider URI: ", provider_uri)
+
+print(seed, code, pool, step)
+print(traindr, verdr, testdr)
+
 
 # get first sub directory
 features_path = provider_uri + "/features"
@@ -160,14 +174,14 @@ def main(
 
     # You can re-implement AlphaCalculator instead of using QLibStockDataCalculator.
     data_train = StockData(instrument=instruments,
-                           start_time='2011-01-01',
-                           end_time='2018-12-31')
+                           start_time=traindr[0],
+                           end_time=traindr[1])
     data_valid = StockData(instrument=instruments,
-                           start_time='2019-01-01',
-                           end_time='2019-12-31')
+                           start_time=verdr[0],
+                           end_time=verdr[1])
     data_test = StockData(instrument=instruments,
-                          start_time='2020-01-01',
-                          end_time='2020-11-15')
+                          start_time=testdr[0],
+                          end_time=testdr[1])
     calculator_train = QLibStockDataCalculator(data_train, target)
     calculator_valid = QLibStockDataCalculator(data_valid, target)
     calculator_test = QLibStockDataCalculator(data_test, target)
