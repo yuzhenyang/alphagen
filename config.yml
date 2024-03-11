@@ -1,3 +1,5 @@
+gpu: 4
+
 seed: 42
 code: CSI300
 pool: 400

@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 import pdb
 
-eval('exec("from .features import FeatureType")')
+eval('exec("from features import FeatureType")')
 
 
 class StockData:

@@ -2,6 +2,7 @@ import json
 import yaml
 import fnmatch
 import os
+import sys
 from typing import Optional, Tuple, Union, List
 from enum import IntEnum
 from datetime import datetime
@@ -9,7 +10,19 @@ import fire
 import numpy as np
 import pdb
 import torch
+import uuid
 
+if len(sys.argv) != 2:
+    print(f"Usage: {sys.argv[0]} <config.yml>")
+    sys.exit(1)
+
+config_yml = sys.argv[1]
+
+with open(config_yml, 'r') as file:
+    conf = yaml.safe_load(file)
+
+def uuid_path(parent):
+    return parent + "/" + str(uuid.uuid4()) + "/"
 
 def format_date(insr):
     b, e = insr.split('-')
@@ -19,11 +32,8 @@ def format_date(insr):
         e = b[:(8-len(e))] + e
     return (f"{b[0:4]}-{b[4:6]}-{b[6:8]}", f"{e[0:4]}-{e[4:6]}-{e[6:8]}")
 
-
-with open("config.yml", 'r') as file:
-    conf = yaml.safe_load(file)
-
 seed, code, pool = conf['seed'], conf['code'], conf['pool']
+gpuid = int(conf['gpu'])
 traindr, verdr, testdr = format_date(conf['train']), format_date(conf['verify']), format_date(conf['test'])
 
 step = conf['step'] if 'step' in conf else None
@@ -62,12 +72,16 @@ for file in files:
 feature_code = "from enum import IntEnum\n\nclass FeatureType(IntEnum):\n"
 for i, feature in enumerate(feature_names):
     feature_code += f"    {feature.upper()} = {i}\n"
-exec(feature_code)
-test = f"print(FeatureType.{feature_names[0].upper()})"
-exec(test)
+# exec(feature_code)
 
-with open("alphagen_qlib/features.py", "w") as ff:
+feature_path = uuid_path('./features')
+os.makedirs(feature_path, exist_ok = True)
+
+with open(feature_path + "features.py", "w") as ff:
     ff.write(feature_code)
+
+print(feature_path)
+sys.path.insert(0, os.path.realpath(feature_path))
 
 # start imports here for class FeatureType(IntEnum) ready
 from stable_baselines3.common.callbacks import BaseCallback
@@ -80,9 +94,12 @@ from alphagen.rl.policy import LSTMSharedNet
 from alphagen.utils.random import reseed_everything
 from alphagen.rl.env.core import AlphaEnvCore
 from alphagen_qlib.calculator import QLibStockDataCalculator
-from alphagen_qlib.features import FeatureType
+from features import FeatureType
 
 from alphagen.data.expression import *
+
+test = f"print(FeatureType.{feature_names[0].upper()})"
+exec(test)
 
 
 class CustomCallback(BaseCallback):
@@ -165,7 +182,7 @@ def main(
     reseed_everything(seed)
 
     # device = torch.device('cpu')
-    device = torch.device('cuda:0')
+    device = torch.device(f'cuda:{gpuid}')
 
     #vwap = Feature(FeatureType.WDB_ASHAREENERGYINDEXADJ_BOLL_LOWER)
     vwap = Feature(FeatureType.MD_STD_VWP)
@@ -175,13 +192,16 @@ def main(
     # You can re-implement AlphaCalculator instead of using QLibStockDataCalculator.
     data_train = StockData(instrument=instruments,
                            start_time=traindr[0],
-                           end_time=traindr[1])
+                           end_time=traindr[1],
+                           device=device)
     data_valid = StockData(instrument=instruments,
                            start_time=verdr[0],
-                           end_time=verdr[1])
+                           end_time=verdr[1],
+                           device=device)
     data_test = StockData(instrument=instruments,
                           start_time=testdr[0],
-                          end_time=testdr[1])
+                          end_time=testdr[1],
+                          device=device)
     calculator_train = QLibStockDataCalculator(data_train, target)
     calculator_valid = QLibStockDataCalculator(data_valid, target)
     calculator_test = QLibStockDataCalculator(data_test, target)
@@ -190,7 +210,8 @@ def main(
         capacity=pool_capacity,
         calculator=calculator_train,
         ic_lower_bound=None,
-        l1_alpha=5e-3
+        l1_alpha=5e-3,
+        device=device
     )
     env = AlphaEnv(pool=pool, device=device, print_expr=True)
 
