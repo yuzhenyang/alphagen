@@ -312,13 +312,15 @@ class Less(BinaryOperator):
         return self._lhs.is_featured and self._rhs.is_featured
 
 
-class LmRes(BinaryOperator):
+class LmResInt(BinaryOperator):
     def _apply(self, lhs: Tensor, rhs: Tensor) -> Tensor:
-        x_bias = torch.stack([lhs, torch.ones_like(lhs)], axis=1)
-        params, _ = torch.lstsq(rhs.unsqueeze(1), x_bias)
-        predicted_y = torch.matmul(x_bias, params)
-        return rhs - predicted_y.squeeze()
-
+        clhs = lhs - lhs.mean(dim=0, keepdim=True)
+        crhs = rhs - rhs.mean(dim=0, keepdim=True)
+        lrcov = (clhs * crhs).sum(dim=0, keepdim=True)
+        lvar = (clhs * clhs).sum(dim=0, keepdim=True)
+        coef = lrcov / lvar
+        res = rhs - coef * lhs
+        return res
 
 class Ref(RollingOperator):
     # Ref is not *really* a rolling operator, in that other rolling operators
@@ -453,15 +455,28 @@ class Corr(PairRollingOperator):
         return ncov / stdmul
 
 
+class LmRes(PairRollingOperator):
+    def _apply(self, lhs: Tensor, rhs: Tensor) -> Tensor:
+        nan_mask = lhs.isnan() | rhs.isnan()
+        clhs = lhs - lhs.mean(dim=-1, keepdim=True)
+        crhs = rhs - rhs.mean(dim=-1, keepdim=True)
+        lrcov = (clhs * crhs).sum(dim=-1, keepdim=True)
+        lvar = (clhs * clhs).sum(dim=-1, keepdim=True)
+        coef = lrcov / lvar
+        res = rhs - coef * lhs
+        res[nan_mask] = torch.nan
+        return res[:,:,-1]
+
+
 # Deprecated!
 Operators: List[Type[Expression]] = [
     # Unary
     Abs, Sign, Log, CSRank,
     # Binary
-    Add, Sub, Mul, Div, Pow, Greater, Less, LmRes,
+    Add, Sub, Mul, Div, Pow, Greater, Less, LmResInt,
     # Rolling
     Ref, Mean, Sum, Std, Var, Skew, Kurt, Max, Min,
     Med, Mad, Rank, Delta, WMA, EMA,
     # Pair rolling
-    Cov, Corr
+    Cov, Corr #, TsLmRes
 ]
