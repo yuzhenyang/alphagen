@@ -455,7 +455,7 @@ class Corr(PairRollingOperator):
         return ncov / stdmul
 
 
-class LmRes(PairRollingOperator):
+class TsLmRes(PairRollingOperator):
     def _apply(self, lhs: Tensor, rhs: Tensor) -> Tensor:
         nan_mask = lhs.isnan() | rhs.isnan()
         clhs = lhs - lhs.mean(dim=-1, keepdim=True)
