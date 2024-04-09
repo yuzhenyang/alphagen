@@ -34,6 +34,7 @@ def format_date(insr):
 
 seed, code, pool = conf['seed'], conf['code'], conf['pool']
 gpuid = int(conf['gpu'])
+search_name = conf['name']
 traindr, verdr, testdr = format_date(conf['train']), format_date(conf['verify']), format_date(conf['test'])
 
 step = conf['step'] if 'step' in conf else None
@@ -215,8 +216,8 @@ def main(
     )
     env = AlphaEnv(pool=pool, device=device, print_expr=True)
 
-    name_prefix = f"new_{instruments}_{pool_capacity}_{seed}"
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    name_prefix = f"{search_name}_{instruments}_{pool_capacity}_{seed}"
+    timestamp = datetime.now().strftime('%m%d%H%M')
 
     checkpoint_callback = CustomCallback(
         save_freq=10000,
@@ -252,6 +253,7 @@ def main(
         total_timesteps=steps,
         callback=checkpoint_callback,
         tb_log_name=f'{name_prefix}_{timestamp}',
+        progress_bar=True,
     )
 
 
