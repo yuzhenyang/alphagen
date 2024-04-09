@@ -12,8 +12,8 @@ import csv
 import re
 
 
-ops = "$md_std_low $md_std_cls $md_std_vol $md_std_hgh $md_std_opn $md_std_vwp".split(' ')
-lops = "md/std/Low md/std/Cls md/std/Vol md/std/Hgh md/std/Opn md/std/Vwp".split(' ')
+ops = "$md_std_adjf $md_std_pcls $md_std_trdsts $md_std_cur $md_std_amt $md_std_lret $md_std_adjpcls $md_std_ret $md_std_low $md_std_cls $md_std_vol $md_std_hgh $md_std_opn $md_std_vwp".split(' ')
+lops = "md/std/Adjf md/std/Pcls md/std/Trdsts md/std/Cur md/std/Amt md/std/lRet md/std/AdjPcls md/std/Ret md/std/Low md/std/Cls md/std/Vol md/std/Hgh md/std/Opn md/std/Vwp".split(' ')
 
 origs = "Mul Sub Ref Mean Med Sum Std Var Max Min Mad Delta WMA EMA Cov Corr Constant".split(' ')
 repls = "Mult Minus TsDelay TsMean TsMedian TsSum TsStd TsVar TsMax TsMin TsMad TsDelta TsWma TsEma TsCov TsCorr Broadcast".split(' ')
