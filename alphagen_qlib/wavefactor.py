@@ -7,12 +7,24 @@ import numpy as np
 import click
 import gc
 import hashlib
+from typing import List, Optional, Tuple
+from numpy import ndarray
 
 np.seterr(divide="ignore", invalid="ignore")
 
+from scipy import stats
+import matplotlib.pyplot as plt
+
+import os
+import sys
+
+libpath = "/home/zyyu/camp/zyyu/repo/gear.v5/ext/whale/blar/env/lib/python3.8/site-packages/"
+sys.path.insert(0, os.path.realpath(libpath))
 from wavel import *
 from legion import *
 from tero.cal import *
+
+from whale import Wave, Whale
 
 """
 sample input for scores.py
@@ -114,12 +126,6 @@ def qret_score_from_ret(ret_irs):
     return (quant_rets[-1], quant_irs[-1], rsquare, sl)
 
 
-def daily_ic(ics):
-    if np.count_nonzero(~np.isfinite(ics)) * 5 > ics.size:
-        return np.nan
-    return float(np.nanmean(ics))
-
-
 def workable_expr(e):
     non_supported_op = [
         "NA",
@@ -139,28 +145,17 @@ def workable_expr(e):
     return True
 
 
-def scale_bound_expr(expr):
-    if expr[:6] == "Scale(":
+def scale_bound_expr(expr, sc="Scale"):
+    scp = sc if sc[-1] == '(' else sc + '('
+    pnum = scp.count('(')
+    if expr[:len(scp)] == scp:
         return expr
-    elif expr[:6] == "Bound(":
-        return "Scale(" + expr + ")"
     else:
-        return "Scale(Bound(" + expr + "))"
+        return scp + expr + ")"*pnum
 
 
 def factor_expr(name, expr):
     return f"{name} <- {scale_bound_expr(expr)}"
-
-
-def read_jsn(fn):
-    with open(fn) as f:
-        j = json.load(f)
-    return j
-
-
-def save_jsn(fn, jsn):
-    with open(fn, "w") as f:
-        json.dump(jsn, f, indent=4)
 
 
 def buile_score_expr(op, n, expr, fwd, fwd_expr, hedge):
@@ -540,7 +535,10 @@ class WaveFactor:
 
     def __init__(self, **kwargs):
         self.jsn = self._build_default([], **kwargs)
-        logging.basicConfig(format="[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=self.jsn['loglvl'])
+        self.calf = Whale(self.jsn['legion'].split(";"), univ=self.jsn['univ'],
+            freq=self.jsn['freq'])[self.jsn["daterange"]]
+        logging.basicConfig(format="[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S",
+            level=self.jsn['loglevel'])
 
     def _build_default(self, exprs, **kwargs):
         def kwargs_or(key, value):
@@ -551,11 +549,10 @@ class WaveFactor:
         jsn['univ'] = kwargs_or('univ', 'ZZ800')
         jsn['freq'] = kwargs_or('freq', 'EOD')
         jsn['fwd'] = kwargs_or('fwd', 5)
-        jsn['train.drange'] = kwargs_or('date_range', '20130101-20201231')
-        jsn['verf.drange'] = kwargs_or('verf_date', '')
+        jsn['daterange'] = kwargs_or('date_range', '20130101-20201231')
         jsn['threshold'] = kwargs_or('theshhold', 0.01)
         jsn['score.expr'] = kwargs_or('score_expr', 'abs(ic.ir')
-        jsn['legion'] = kwargs_or('legion', '/slice/ljs/cne/EOD')
+        jsn['legion'] = kwargs_or('legion', '/home/zyyu/data/legion/cne/EOD')
         jsn['metrics'] = kwargs_or('metrics', ["IC", "Ret", "Thret", "Qret", "Trv"])
         jsn['recalc.neg.ic'] = kwargs_or('recalc_neg_ic', -0.1)
         jsn['sc'] = kwargs_or('sc', 'Scale(Bound(')
@@ -564,10 +561,12 @@ class WaveFactor:
         jsn['exprs'] = [{'name':'expr.'+str(i), 'expr': expr} for i, expr in enumerate(exprs)]
         jsn['loglevel'] = kwargs_or('loglevel', logging.DEBUG)
 
+        return jsn
+
 
     def _load_var(self, var):
         if var in self.loaded_vs:
-            logging.trace(f"Bypass {var} loading")
+            logging.debug(f"Bypass {var} loading")
             return self.loaded_vs[var]
 
         self.loaded_vs[var] = self.loader[var]
@@ -598,7 +597,7 @@ class WaveFactor:
         logging.info(f"Legion root: {root}; univ: {univ}; freq: {freq}")
         logging.info(f"Date spec: {date_spec}; burnin: {burnin}; legion: {lgn_date_spec}")
 
-        idx_path = jsn["idxpath"]
+        idx_path = jsn["hedge"]
         fwd_expr = jsn["fwdexpr"]
         logging.info(f"Index path: {idx_path} Fwd expr: {fwd_expr}")
         score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
@@ -621,8 +620,8 @@ class WaveFactor:
         return self.jsn
 
 
-    def factor(self, raw_exprs) -> List(ndarray):
-        jsn = self._prepare()
+    def factor(self, raw_exprs):
+        jsn = self.jsn
 
         sc = "sc" in jsn and jsn["sc"] or "Scale"
         logging.debug(f"SC method: {sc}")
@@ -638,38 +637,19 @@ class WaveFactor:
                  ]
         logging.info(f"Read {len(rexprs)} exprssions")
 
-        # build scoring exprs
         exprs = [factor_expr(n, e) for _, n, e in rexprs]
         logging.info(f"Factor expressions formatted {len(exprs)}")
 
-        expr2idx = {}  # expr name to index
-        for i, n, _ in rexprs:
-            expr2idx[n] = i
+        wir = Wave.compile_or_load(exprs)
 
-        graph = self.graph
+        return self.calf.eval(wir, burn = self.burnin)
 
-        graph.build([e for _, e in exprs])
-        logging.info("Graph compiled")
 
-        logging.info("Prepare inputs...")
-        shape = self.graph.shape
+    def save(self, terms, obase):
+        dst = Legion(obase, 'w')
 
-        inputs = {var: self.load(graph.var_name(var)) for var in graph.vars}
-        term_names = [e.split("<-")[0].strip() for _, e in exprs]
-        outs = {term_name: np.ndarray(shape, order="F") for term_name in term_names}
-
-        for var, buf in inputs.items():
-            graph.set_input(var, buf)
-
-        for term_name, buf in outs.items():
-            graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
-        logging.info("Inputs done")
-
-        logging.info("Computing factors...")
-        graph.run()
-        logging.info("Factors computed")
-
-        return outs
+        for path, ktd in terms.items():
+            dst[path] = ktd
 
 
     def score(self, raw_exprs, metrics = None):
@@ -710,7 +690,7 @@ class WaveFactor:
         logging.info("Prepare inputs...")
         shape = self.graph.shape
 
-        inputs = {var: self.load(graph.var_name(var)) for var in graph.vars}
+        inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
         term_names = [e.split("<-")[0].strip() for _, e in exprs]
         outs = {
             term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
@@ -788,7 +768,7 @@ class WaveFactor:
         logging.info("Prepare inputs...")
         shape = self.graph.shape
 
-        inputs = {var: self.load(graph.var_name(var)) for var in graph.vars}
+        inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
         term_names = [e.split("<-")[0].strip() for _, e in exprs]
         outs = {
             term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
@@ -811,3 +791,4 @@ class WaveFactor:
             jsn['exprs'][expr2idx[expr_name]][metric] = ktd[:,:,self.burnin:].flatten(order="F").tolist()
 
         return jsn
+
