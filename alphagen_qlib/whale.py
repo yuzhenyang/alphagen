@@ -13,7 +13,7 @@ __all__ = ['Wave', 'Whale', 'Legion', 'KTD', 'NA', 'isNA']
 class Wave(wavel.Wave):
     def __init__(self, loader, **kw):
         wavel.Wave.__init__(self)
-        self.score = kw.get('score', False)
+        self.score = kw.get('score', 0)
         self.max_parallelism = kw.get('max_parallelism', 0)
         self.loader = loader
         dims = loader.dims()
@@ -35,21 +35,30 @@ class Wave(wavel.Wave):
         inputs = {}
         for var in self.vars:
             # load KTD from legion
-            inputs[var] = self.loader[self.var_name(var)]
+            # inputs[var] = self.loader[self.var_name(var)]
+            inputs[var] = self._load_var(self.var_name(var))
             self.set_input(var, inputs[var])
 
         # setup output buffers according to self.facs
         ans = {}
         for fac in self.facs:
             name = self.fac_name(fac)
-            ans[name] = KTD(self.score and [name] or self.dims[0],
-                              self.dims[1], self.dims[2])
+            if self.score > 0:
+                dim0 = [f"{name}.{i+1}" for i in range(self.score)]
+            else:
+                dim0 = self.dims[0]
+            ans[name] = KTD( dim0, self.dims[1], self.dims[2])
             self.set_output(fac, ans[name])
 
         # run wave and return results
         self.run(max_parallelism=self.max_parallelism)
 
         return ans
+
+    def _load_var(self, var):
+        if var not in self.loaded_vars:
+            self.loaded_vars[var] = self.loader[var]
+        return self.loaded_vars[var]
 
     @staticmethod
     def compile(exprs):
