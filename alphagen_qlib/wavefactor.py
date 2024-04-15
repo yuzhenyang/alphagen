@@ -24,6 +24,8 @@ from wavel import *
 from legion import *
 from tero.cal import *
 
+libpath = "/home/zyyu/workspace/rl/alphagen/alphagen_qlib"
+sys.path.insert(0, os.path.realpath(libpath))
 from whale import Wave, Whale
 
 """
@@ -708,7 +710,7 @@ class WaveFactor:
         # logging.info("Computing daily scores...")
         # graph.run()
         wir = Wave.compile_or_load([e[1] for e in exprs])
-        outs = self.calf.eval(wir, burn = self.burnin)
+        outs = self.calf.eval(wir, score = True, burn = self.burnin)
         logging.info("Score computed")
 
         # put same result length expr together and calculate the final_score() group by result length
@@ -798,7 +800,7 @@ class WaveFactor:
         # graph.run()
         # logging.info("Score computed")
         wir = Wave.compile_or_load([e[1] for e in exprs])
-        outs = self.calf.eval(wir, burn = self.burnin)
+        outs = self.calf.eval(wir, score = True, burn = self.burnin)
         logging.info("Score computed")
 
         for term_name, ktd in outs.items():

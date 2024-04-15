@@ -15,13 +15,14 @@ __all__ = ['Wave', 'Whale', 'Legion', 'KTD', 'NA', 'isNA']
 class Wave(wavel.Wave):
     def __init__(self, loader, **kw):
         wavel.Wave.__init__(self)
-        self.score = kw.get('score', 0)
+        self.score = kw.get('score', False)
         self.max_parallelism = kw.get('max_parallelism', 0)
         self.loader = loader
         self.dims = loader.dims()
         self.shape = tuple(map(len, self.dims))
         if len(self.shape) != 3:
             raise ValueError('invalid shape: len(self.shape) != 3')
+        self.loaded_vars = {}
 
     def __call__(self, exprs):
         if self.done:
@@ -50,7 +51,7 @@ class Wave(wavel.Wave):
             else:
                 dim0 = self.dims[0]
             ans[name] = KTD(dim0, self.dims[1], self.dims[2])
-            self.set_output(fac, ans[name])
+            self.set_output(fac, ans[name], len(dim0))
 
         # run wave and return results
         self.run(max_parallelism=self.max_parallelism)
@@ -213,8 +214,9 @@ class Calf():
         return True
 
     # compute full expressions (with assignment), return result(s)
-    def eval(self, exprs, *, burn = -1, max_parallelism = 0):
+    def eval(self, exprs, *, score = False, burn = -1, max_parallelism = 0):
         # load WIR
+        # pdb.set_trace()
         wir = Wave.compile_or_load(exprs)
 
         if burn < 0:
@@ -229,7 +231,7 @@ class Calf():
         # first extend, then burn off
         beg = self.bizday(self.loader.beg, -burn_days)
         return {name: v(ds = [burn_days, None]) for name, v in
-                Wave(self.loader.span(beg, self.loader.end), max_parallelism=max_parallelism)(wir).items()}
+                Wave(self.loader.span(beg, self.loader.end), score = score, max_parallelism=max_parallelism)(wir).items()}
 
     #  compute semi-expressions (without assignment), return result(s)
     def load(self, exprs_dict, *, burn = -1):
