@@ -59,29 +59,29 @@ sample input for scores.py
 }
 """
 QRET_QUANTILE_NUM = 10
-QRET_OUT_ORDER_NUM = [0] * QRET_QUANTILE_NUM
-QRET_HIGH_DIFF_SIGN = 0
-QRET_LOW_DIFF_SIGN = 0
-QRET_TOTAL_EXPR_NUM = 0
+# QRET_OUT_ORDER_NUM = [0] * QRET_QUANTILE_NUM
+# QRET_HIGH_DIFF_SIGN = 0
+# QRET_LOW_DIFF_SIGN = 0
+# QRET_TOTAL_EXPR_NUM = 0
 
 
-def reset_qret_stat():
-    global QRET_OUT_ORDER_NUM, QRET_HIGH_DIFF_SIGN, QRET_LOW_DIFF_SIGN, QRET_TOTAL_EXPR_NUM
-    QRET_OUT_ORDER_NUM = [0] * QRET_QUANTILE_NUM
-    QRET_HIGH_DIFF_SIGN = 0
-    QRET_LOW_DIFF_SIGN = 0
-    QRET_TOTAL_EXPR_NUM = 0
+# def reset_qret_stat():
+#     global QRET_OUT_ORDER_NUM, QRET_HIGH_DIFF_SIGN, QRET_LOW_DIFF_SIGN, QRET_TOTAL_EXPR_NUM
+#     QRET_OUT_ORDER_NUM = [0] * QRET_QUANTILE_NUM
+#     QRET_HIGH_DIFF_SIGN = 0
+#     QRET_LOW_DIFF_SIGN = 0
+#     QRET_TOTAL_EXPR_NUM = 0
 
 
-def build_qret_stat():
-    r = {
-        "out.of.order": QRET_OUT_ORDER_NUM,
-        "high.sign.diff": QRET_HIGH_DIFF_SIGN,
-        "low.sign.diff": QRET_LOW_DIFF_SIGN,
-        "total.expr.num": QRET_TOTAL_EXPR_NUM,
-    }
+# def build_qret_stat():
+#     r = {
+#         "out.of.order": QRET_OUT_ORDER_NUM,
+#         "high.sign.diff": QRET_HIGH_DIFF_SIGN,
+#         "low.sign.diff": QRET_LOW_DIFF_SIGN,
+#         "total.expr.num": QRET_TOTAL_EXPR_NUM,
+#     }
 
-    return r
+#     return r
 
 
 def qret_ret_rsquare(ret_ics):
@@ -99,9 +99,6 @@ def qret_score_from_ret(ret_irs):
     """
     calculate the quantile returns score
     """
-    global QRET_OUT_ORDER_NUM, QRET_HIGH_DIFF_SIGN, QRET_LOW_DIFF_SIGN, QRET_TOTAL_EXPR_NUM
-    QRET_TOTAL_EXPR_NUM += 1
-
     quant_rets = [ret_irs[i] for i in range(0, len(ret_irs)) if i % 3 == 0]
     quant_irs = [ret_irs[i] for i in range(0, len(ret_irs)) if i % 3 == 1]
     quant_prs = [ret_irs[i] for i in range(0, len(ret_irs)) if i % 3 == 2]
@@ -111,7 +108,6 @@ def qret_score_from_ret(ret_irs):
     for i in range(quant_num - 1):
         if quant_rets[i] > quant_rets[i + 1]:
             out_order_num = out_order_num + 1
-            QRET_OUT_ORDER_NUM[i] += 1
 
     corr1 = np.corrcoef(np.array(quant_rets), np.array(list(range(quant_num))))[0, 1]
     corr2 = np.corrcoef(np.array(quant_rets[1:]), np.array(list(range(quant_num - 1))))[0, 1]
@@ -119,10 +115,8 @@ def qret_score_from_ret(ret_irs):
 
     sl, rsquare = qret_ret_rsquare(quant_rets)
     if corr1 * corr2 < 0:
-        QRET_LOW_DIFF_SIGN += 1
         return (0, 0, rsquare, sl)
     if corr1 * corr3 < 0:
-        QRET_HIGH_DIFF_SIGN += 1
         return (0, 0, rsquare, sl)
 
     return (quant_rets[-1], quant_irs[-1], rsquare, sl)
@@ -267,26 +261,6 @@ def get_day_bars(freq, fwd):
     assert False
 
 
-@click.command()
-@click.argument("eval-file", metavar="<eval.jsn>", type=click.Path(exists=True))
-@click.argument("score-file", metavar="<output-score.jsn>", type=click.Path())
-def main(eval_file, score_file):
-    logging.basicConfig(format="[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.DEBUG)
-    jsn = read_jsn(eval_file)
-    recalc_neg_ic_thresh = "recalc.neg.ic" in jsn and jsn["recalc.neg.ic"] or None
-    res = calc_score(jsn, recalc_neg_ic_thresh)
-    save_jsn(score_file, res)
-    logging.info("Done")
-
-
-def intersect_train_verf(train_jsn, verf_jsn):
-    train_exprs = set([e["name"] for e in train_jsn["exprs"]])
-    verf_exprs = set([e["name"] for e in verf_jsn["exprs"]])
-    com_exprs = verf_exprs.intersection(train_exprs)
-    verf_jsn["exprs"] = [e for e in verf_jsn["exprs"] if e["name"] in com_exprs]
-    return verf_jsn
-
-
 def get_days_count(date_spec):
     if len(date_spec) <= 0:
         return 0
@@ -307,152 +281,152 @@ def get_date_range(jsn):
         return jsn["date.range"]
 
 
-def calc_score(jsn, recalc_neg_ic_thresh):
-    """
-    "legion":["/cache/ag/legion/cne"],
-    "univ": "ZZ800",
-    "freq": "DAILY",
-    "y":"retv225.my",
-    "ypath":"retv225.my/fwd_5/fwd.Retv225.DAILY.5",
-    "fwdexpr":"retv225.my/fwd_5/fwd.Retv225.DAILY.5",
-    "fwd":5,
-    "burnin":240,
-    "metrics": ["IC","Aret","Tret"],
-    "score":"ic",
-    "threshold":0.02,
-    "date-range": "20170401-20191231",
-    "eval-period": ["20170401-1231","20180101-1231","20190101-1231"],
-    """
+# def calc_score(jsn, recalc_neg_ic_thresh):
+#     """
+#     "legion":["/cache/ag/legion/cne"],
+#     "univ": "ZZ800",
+#     "freq": "DAILY",
+#     "y":"retv225.my",
+#     "ypath":"retv225.my/fwd_5/fwd.Retv225.DAILY.5",
+#     "fwdexpr":"retv225.my/fwd_5/fwd.Retv225.DAILY.5",
+#     "fwd":5,
+#     "burnin":240,
+#     "metrics": ["IC","Aret","Tret"],
+#     "score":"ic",
+#     "threshold":0.02,
+#     "date-range": "20170401-20191231",
+#     "eval-period": ["20170401-1231","20180101-1231","20190101-1231"],
+#     """
 
-    # root, date_spec, outfile, univ, freq, fwd, yret, ic, ir, burnin
-    # basic things
-    root = jsn["legion"]
-    univ = jsn["univ"]
-    freq = jsn["freq"]
-    date_spec = get_date_range(jsn)
-    burnin = "burnin" in jsn and jsn["burnin"] or 0
-    burnin = burnin > 0 and burnin or (freq == "EOD" and 192 or 21)
+#     # root, date_spec, outfile, univ, freq, fwd, yret, ic, ir, burnin
+#     # basic things
+#     root = jsn["legion"]
+#     univ = jsn["univ"]
+#     freq = jsn["freq"]
+#     date_spec = get_date_range(jsn)
+#     burnin = "burnin" in jsn and jsn["burnin"] or 0
+#     burnin = burnin > 0 and burnin or (freq == "EOD" and 192 or 21)
 
-    dates = bizdays(date_spec)
-    lgn_begin = bizday(dates[0], -burnin).strftime("%Y%m%d")
-    lgn_date_spec = lgn_begin + "-" + dates[-1].strftime("%Y%m%d")
-    logging.info("Legion root: %s" % (root))
-    logging.info("Date spec: %s; burnin: %d; legion: %s" % (date_spec, burnin, lgn_date_spec))
-    logging.info(f"Recalc neg ic threshold: {recalc_neg_ic_thresh}")
+#     dates = bizdays(date_spec)
+#     lgn_begin = bizday(dates[0], -burnin).strftime("%Y%m%d")
+#     lgn_date_spec = lgn_begin + "-" + dates[-1].strftime("%Y%m%d")
+#     logging.info("Legion root: %s" % (root))
+#     logging.info("Date spec: %s; burnin: %d; legion: %s" % (date_spec, burnin, lgn_date_spec))
+#     logging.info(f"Recalc neg ic threshold: {recalc_neg_ic_thresh}")
 
-    idx_path = get_index_path(jsn)
-    fwd_expr = get_fwd_info(jsn)
-    logging.info("Idx: %s" % (idx_path))
-    logging.info("Fwd expr: %s" % (fwd_expr))
-    score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
-    tse = trans_score_expr(score_expr)
-    logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
+#     idx_path = get_index_path(jsn)
+#     fwd_expr = get_fwd_info(jsn)
+#     logging.info("Idx: %s" % (idx_path))
+#     logging.info("Fwd expr: %s" % (fwd_expr))
+#     score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
+#     tse = trans_score_expr(score_expr)
+#     logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
 
-    # legion
-    logging.info("Open %s as input data directory" % root)
-    lgn = Legion(root.split(";"), debug=False)
-    logging.debug("Opened")
+#     # legion
+#     logging.info("Open %s as input data directory" % root)
+#     lgn = Legion(root.split(";"), debug=False)
+#     logging.debug("Opened")
 
-    loader = lgn.loader(lgn_date_spec, univ=univ, freq=freq)
-    na = loader["=na"]
+#     loader = lgn.loader(lgn_date_spec, univ=univ, freq=freq)
+#     na = loader["=na"]
 
-    def load(var):
-        if var == "na/na":
-            return na
-        return loader[var]
+#     def load(var):
+#         if var == "na/na":
+#             return na
+#         return loader[var]
 
-    # expr
-    rexprs = [
-        (i, e["name"], scale_bound_expr(e["expr"])) for i, e in enumerate(jsn["exprs"]) if workable_expr(e["expr"])
-    ]  # Workaround: remove exprs with none implemented OP
-    logging.info("Read %s exprssions" % len(rexprs))
+#     # expr
+#     rexprs = [
+#         (i, e["name"], scale_bound_expr(e["expr"])) for i, e in enumerate(jsn["exprs"]) if workable_expr(e["expr"])
+#     ]  # Workaround: remove exprs with none implemented OP
+#     logging.info("Read %s exprssions" % len(rexprs))
 
-    # build scoring exprs
-    exprs = []
-    for m in jsn["metrics"]:
-        op = m.replace("+", "")
-        # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
-        es = [buile_score_expr(op, n, e, jsn["fwd"], fwd_expr, idx_path) for _, n, e in rexprs]
-        exprs.extend(es)
-    logging.info("IC expressions formatted")
+#     # build scoring exprs
+#     exprs = []
+#     for m in jsn["metrics"]:
+#         op = m.replace("+", "")
+#         # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
+#         es = [buile_score_expr(op, n, e, jsn["fwd"], fwd_expr, idx_path) for _, n, e in rexprs]
+#         exprs.extend(es)
+#     logging.info("IC expressions formatted")
 
-    expr2idx = {}  # expr name to index
-    for i, n, _ in rexprs:
-        expr2idx[n] = i
+#     expr2idx = {}  # expr name to index
+#     for i, n, _ in rexprs:
+#         expr2idx[n] = i
 
-    # wave
-    graph = Wave()
-    shape = tuple(map(len, loader.dims()))
-    graph.shape = shape
-    graph.build([e for _, e in exprs])
-    logging.info("Graph compiled")
+#     # wave
+#     graph = Wave()
+#     shape = tuple(map(len, loader.dims()))
+#     graph.shape = shape
+#     graph.build([e for _, e in exprs])
+#     logging.info("Graph compiled")
 
-    logging.info("Prepare inputs...")
-    inputs = {var: load(graph.var_name(var)) for var in graph.vars}
-    term_names = [e.split("<-")[0].strip() for _, e in exprs]
-    outs = {
-        term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
-        for term_name in term_names
-    }
+#     logging.info("Prepare inputs...")
+#     inputs = {var: load(graph.var_name(var)) for var in graph.vars}
+#     term_names = [e.split("<-")[0].strip() for _, e in exprs]
+#     outs = {
+#         term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
+#         for term_name in term_names
+#     }
 
-    for var, buf in inputs.items():
-        graph.set_input(var, buf)
+#     for var, buf in inputs.items():
+#         graph.set_input(var, buf)
 
-    for term_name, buf in outs.items():
-        graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
-    logging.info("Inputs done")
+#     for term_name, buf in outs.items():
+#         graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
+#     logging.info("Inputs done")
 
-    logging.info("Computing daily scores...")
-    graph.run()
-    logging.info("Score computed")
+#     logging.info("Computing daily scores...")
+#     graph.run()
+#     logging.info("Score computed")
 
-    # put same result length expr together and calculate the final_score() group by result length
-    length_scores = defaultdict(list)  # length : score_ktd
-    length_idx = defaultdict(int)  # length : current_index
-    length_term2inx = defaultdict(lambda: defaultdict(int))  # length : {term_name:index}
+#     # put same result length expr together and calculate the final_score() group by result length
+#     length_scores = defaultdict(list)  # length : score_ktd
+#     length_idx = defaultdict(int)  # length : current_index
+#     length_term2inx = defaultdict(lambda: defaultdict(int))  # length : {term_name:index}
 
-    for term_name, ktd in outs.items():
-        rlen = result_len_from_name(term_name)
-        length_scores[rlen].append(ktd[:rlen, :, :].flatten(order="F").tolist())
-        length_term2inx[rlen][term_name] = length_idx[rlen]
-        length_idx[rlen] += 1
+#     for term_name, ktd in outs.items():
+#         rlen = result_len_from_name(term_name)
+#         length_scores[rlen].append(ktd[:rlen, :, :].flatten(order="F").tolist())
+#         length_term2inx[rlen][term_name] = length_idx[rlen]
+#         length_idx[rlen] += 1
 
-    del outs
-    gc.collect()
+#     del outs
+#     gc.collect()
 
-    logging.info("Computing final scores...")
-    jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, burnin)
-    logging.info("Metrics computed")
+#     logging.info("Computing final scores...")
+#     jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, burnin)
+#     logging.info("Metrics computed")
 
-    # Calc Neg(expr) for IC < 0
-    if recalc_neg_ic_thresh is not None:
-        neg_ic_jsn = copy.deepcopy(jsn)
-        neg_ic_jsn["exprs"] = [
-            expr for expr in neg_ic_jsn["exprs"] if "ic.mean" in expr and expr["ic.mean"] <= recalc_neg_ic_thresh
-        ]
-        logging.info(
-            "Recalculate the negtive IC exprs number: %d for threshold: %.4f",
-            len(neg_ic_jsn["exprs"]),
-            recalc_neg_ic_thresh,
-        )
-        if len(neg_ic_jsn["exprs"]) <= 100:
-            logging.info("Too less negtive IC exprs %d, recalculation ignored", len(neg_ic_jsn["exprs"]))
-        else:
-            for es in neg_ic_jsn["exprs"]:
-                es["name"] = f"{es['name']}.neg"
-                es["expr"] = f"Neg({es['expr']})"
-                if "chromo" in es:
-                    es["chromo"] = f"Neg({es['chromo']})"
+#     # Calc Neg(expr) for IC < 0
+#     if recalc_neg_ic_thresh is not None:
+#         neg_ic_jsn = copy.deepcopy(jsn)
+#         neg_ic_jsn["exprs"] = [
+#             expr for expr in neg_ic_jsn["exprs"] if "ic.mean" in expr and expr["ic.mean"] <= recalc_neg_ic_thresh
+#         ]
+#         logging.info(
+#             "Recalculate the negtive IC exprs number: %d for threshold: %.4f",
+#             len(neg_ic_jsn["exprs"]),
+#             recalc_neg_ic_thresh,
+#         )
+#         if len(neg_ic_jsn["exprs"]) <= 100:
+#             logging.info("Too less negtive IC exprs %d, recalculation ignored", len(neg_ic_jsn["exprs"]))
+#         else:
+#             for es in neg_ic_jsn["exprs"]:
+#                 es["name"] = f"{es['name']}.neg"
+#                 es["expr"] = f"Neg({es['expr']})"
+#                 if "chromo" in es:
+#                     es["chromo"] = f"Neg({es['chromo']})"
 
-            reset_qret_stat()
-            neg_ic_jsn = calc_score(neg_ic_jsn, None)
+#             reset_qret_stat()
+#             neg_ic_jsn = calc_score(neg_ic_jsn, None)
 
-            jsn["exprs"].extend(neg_ic_jsn["exprs"])
-            jsn["qstat.neg"] = build_qret_stat()
-    jsn["exprs"] = sorted(jsn["exprs"], key=lambda x: x["score"], reverse=True)
-    logging.info(f"Total {len(jsn['exprs'])} expr returned")
+#             jsn["exprs"].extend(neg_ic_jsn["exprs"])
+#             jsn["qstat.neg"] = build_qret_stat()
+#     jsn["exprs"] = sorted(jsn["exprs"], key=lambda x: x["score"], reverse=True)
+#     logging.info(f"Total {len(jsn['exprs'])} expr returned")
 
-    return jsn
+#     return jsn
 
 
 #
@@ -496,7 +470,6 @@ def calc_date_range_score(jsn, score_expr, expr2idx, shape, length_scores, lengt
         expr["score"] = get_expr_score(expr, score_expr, "ic.ir")
 
     jsn["exprs"] = [e for e in accepted_exprs if e["score"] >= jsn["threshold"]]
-    jsn["qstat"] = build_qret_stat()
 
     return jsn
 
