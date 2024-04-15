@@ -680,35 +680,8 @@ class WaveFactor:
         expr2idx = {}  # expr name to index
         for i, n, _ in rexprs:
             expr2idx[n] = i
+        logging.info(f"Building expr2idx:{len(expr2idx)}")
 
-        logging.info(f"expr2idx:{expr2idx}")
-
-
-        # # wave
-        # graph = self.graph
-
-        # graph.build([e for _, e in exprs])
-        # logging.info("Graph compiled")
-
-        # logging.info("Prepare inputs...")
-        # shape = self.graph.shape
-
-        # inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
-        # term_names = [e.split("<-")[0].strip() for _, e in exprs]
-        # outs = {
-        #     term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
-        #     for term_name in term_names
-        # }
-
-        # for var, buf in inputs.items():
-        #     graph.set_input(var, buf)
-
-        # for term_name, buf in outs.items():
-        #     graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
-        # logging.info("Inputs done")
-
-        # logging.info("Computing daily scores...")
-        # graph.run()
         wir = Wave.compile_or_load([e[1] for e in exprs])
         outs = self.calf.eval(wir, score = True, burn = self.burnin)
         logging.info("Score computed")
@@ -734,8 +707,6 @@ class WaveFactor:
         score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
         tse = trans_score_expr(score_expr)
         logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
-        # eval_exprs, neg_ic_exprs = calc_date_range_score(jsn, exprs, tse, expr2idx,
-        #         shape, length_scores, length_term2inx, self.burnin, 0)
 
         jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, self.burnin)
 
@@ -761,9 +732,7 @@ class WaveFactor:
         eval_metrics = metrics if metrics else jsn["metrics"]
         for m in eval_metrics:
             op = m.replace("+", "")
-            # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
             es = [buile_score_expr(op, n, e, jsn["fwd"], jsn['fwdexpr'], jsn['hedge']) for _, n, e in rexprs]
-            
             exprs.extend(es)
         logging.info("IC expressions formatted")
 
@@ -772,33 +741,6 @@ class WaveFactor:
             expr2idx[n] = i
 
         logging.info(f"expr2idx:{expr2idx}")
-
-        # # wave
-        # graph = self.graph
-
-        # graph.build([e for _, e in exprs])
-        # logging.info("Graph compiled")
-
-        # logging.info("Prepare inputs...")
-        # shape = self.graph.shape
-
-        # inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
-        # term_names = [e.split("<-")[0].strip() for _, e in exprs]
-        # outs = {
-        #     term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
-        #     for term_name in term_names
-        # }
-
-        # for var, buf in inputs.items():
-        #     graph.set_input(var, buf)
-
-        # for term_name, buf in outs.items():
-        #     graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
-        # logging.info("Inputs done")
-
-        # logging.info("Computing daily scores...")
-        # graph.run()
-        # logging.info("Score computed")
         wir = Wave.compile_or_load([e[1] for e in exprs])
         outs = self.calf.eval(wir, score = True, burn = self.burnin)
         logging.info("Score computed")
