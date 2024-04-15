@@ -8,6 +8,8 @@ if __file__[-23:] == 'whale/whale/__init__.py':
 from legion import *
 import wavel, os, math
 
+import logging
+
 __all__ = ['Wave', 'Whale', 'Legion', 'KTD', 'NA', 'isNA']
 
 class Wave(wavel.Wave):
@@ -16,11 +18,10 @@ class Wave(wavel.Wave):
         self.score = kw.get('score', 0)
         self.max_parallelism = kw.get('max_parallelism', 0)
         self.loader = loader
-        dims = loader.dims()
-        self.shape = tuple(map(len, dims))
+        self.dims = loader.dims()
+        self.shape = tuple(map(len, self.dims))
         if len(self.shape) != 3:
             raise ValueError('invalid shape: len(self.shape) != 3')
-        self.dims = (['score'], dims[1], dims[2]) if self.score else dims
 
     def __call__(self, exprs):
         if self.done:
@@ -44,10 +45,11 @@ class Wave(wavel.Wave):
         for fac in self.facs:
             name = self.fac_name(fac)
             if self.score > 0:
-                dim0 = [f"{name}.{i+1}" for i in range(self.score)]
+                sl = Wave.result_len_by_name(name)
+                dim0 = [f"{name}.{i+1}" for i in range(sl)]
             else:
                 dim0 = self.dims[0]
-            ans[name] = KTD( dim0, self.dims[1], self.dims[2])
+            ans[name] = KTD(dim0, self.dims[1], self.dims[2])
             self.set_output(fac, ans[name])
 
         # run wave and return results
@@ -57,8 +59,19 @@ class Wave(wavel.Wave):
 
     def _load_var(self, var):
         if var not in self.loaded_vars:
+            logging.debug(f"Loading {var}")
             self.loaded_vars[var] = self.loader[var]
+        else:
+            logging.debug(f"Bypass {var} loading")
         return self.loaded_vars[var]
+
+    @staticmethod
+    def result_len_by_name(term_name):
+        ps = term_name.split("./")
+        if len(ps) < 2:
+            return 1
+        dot_rindex = ps[0].rfind(".")
+        return int(ps[0][dot_rindex + 1 :])
 
     @staticmethod
     def compile(exprs):

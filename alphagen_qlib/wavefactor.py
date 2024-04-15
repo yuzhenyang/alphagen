@@ -653,7 +653,7 @@ class WaveFactor:
 
 
     def score(self, raw_exprs, metrics = None):
-        jsn = self._prepare()
+        jsn = self.jsn
 
         sc = "sc" in jsn and jsn["sc"] or "Scale"
         logging.debug(f"SC method: {sc}")
@@ -671,7 +671,7 @@ class WaveFactor:
         for m in eval_metrics:
             op = m.replace("+", "")
             # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
-            es = [buile_score_expr(op, n, e, jsn["fwd"], fwd_expr, idx_path) for _, n, e in rexprs]
+            es = [buile_score_expr(op, n, e, jsn["fwd"], self.jsn['fwdexpr'], self.jsn['hedge']) for _, n, e in rexprs]
             exprs.extend(es)
         logging.info("IC expressions formatted")
 
@@ -681,31 +681,34 @@ class WaveFactor:
 
         logging.info(f"expr2idx:{expr2idx}")
 
-        # wave
-        graph = self.graph
 
-        graph.build([e for _, e in exprs])
-        logging.info("Graph compiled")
+        # # wave
+        # graph = self.graph
 
-        logging.info("Prepare inputs...")
-        shape = self.graph.shape
+        # graph.build([e for _, e in exprs])
+        # logging.info("Graph compiled")
 
-        inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
-        term_names = [e.split("<-")[0].strip() for _, e in exprs]
-        outs = {
-            term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
-            for term_name in term_names
-        }
+        # logging.info("Prepare inputs...")
+        # shape = self.graph.shape
 
-        for var, buf in inputs.items():
-            graph.set_input(var, buf)
+        # inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
+        # term_names = [e.split("<-")[0].strip() for _, e in exprs]
+        # outs = {
+        #     term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
+        #     for term_name in term_names
+        # }
 
-        for term_name, buf in outs.items():
-            graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
-        logging.info("Inputs done")
+        # for var, buf in inputs.items():
+        #     graph.set_input(var, buf)
 
-        logging.info("Computing daily scores...")
-        graph.run()
+        # for term_name, buf in outs.items():
+        #     graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
+        # logging.info("Inputs done")
+
+        # logging.info("Computing daily scores...")
+        # graph.run()
+        wir = Wave.compile_or_load([e[1] for e in exprs])
+        outs = self.calf.eval(wir, burn = self.burnin)
         logging.info("Score computed")
 
         # put same result length expr together and calculate the final_score() group by result length
@@ -713,30 +716,38 @@ class WaveFactor:
         length_idx = defaultdict(int)  # length : current_index
         length_term2inx = defaultdict(lambda: defaultdict(int))  # length : {term_name:index}
 
+        shape = None
         for term_name, ktd in outs.items():
             rlen = result_len_from_name(term_name)
             length_scores[rlen].append(ktd[:rlen, :, :].flatten(order="F").tolist())
             length_term2inx[rlen][term_name] = length_idx[rlen]
             length_idx[rlen] += 1
+            if not shape:
+                shape = ktd.shape
 
         del outs
         gc.collect()
 
         logging.info("Computing final scores...")
-        eval_exprs, neg_ic_exprs = calc_date_range_score(jsn, exprs, tse, expr2idx,
-                shape, length_scores, length_term2inx, self.burnin, 0)
+        score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
+        tse = trans_score_expr(score_expr)
+        logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
+        # eval_exprs, neg_ic_exprs = calc_date_range_score(jsn, exprs, tse, expr2idx,
+        #         shape, length_scores, length_term2inx, self.burnin, 0)
+
+        jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, self.burnin)
 
         logging.info("Metrics computed")
-        return eval_exprs
+        return jsn
 
 
     def metrics(self, raw_exprs, metrics = None):
-        jsn = self._prepare()
+        jsn = self.jsn
 
         sc = "sc" in jsn and jsn["sc"] or "Scale"
         logging.debug(f"SC method: {sc}")
         jsn['exprs'] = [{'name':'.'.join(['expr', str(i), md5str(expr)]), 'expr': expr} for i, expr in enumerate(raw_exprs)]
-        logging.info(jsn['exprs'])
+        # logging.info(jsn['exprs'])
 
         rexprs = [
             (i, e["name"], scale_bound_expr(e["expr"], sc)) for i, e in enumerate(jsn['exprs']) if workable_expr(e["expr"])
@@ -749,7 +760,8 @@ class WaveFactor:
         for m in eval_metrics:
             op = m.replace("+", "")
             # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
-            es = [buile_score_expr(op, n, e, jsn["fwd"], fwd_expr, idx_path) for _, n, e in rexprs]
+            es = [buile_score_expr(op, n, e, jsn["fwd"], jsn['fwdexpr'], jsn['hedge']) for _, n, e in rexprs]
+            
             exprs.extend(es)
         logging.info("IC expressions formatted")
 
@@ -759,31 +771,34 @@ class WaveFactor:
 
         logging.info(f"expr2idx:{expr2idx}")
 
-        # wave
-        graph = self.graph
+        # # wave
+        # graph = self.graph
 
-        graph.build([e for _, e in exprs])
-        logging.info("Graph compiled")
+        # graph.build([e for _, e in exprs])
+        # logging.info("Graph compiled")
 
-        logging.info("Prepare inputs...")
-        shape = self.graph.shape
+        # logging.info("Prepare inputs...")
+        # shape = self.graph.shape
 
-        inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
-        term_names = [e.split("<-")[0].strip() for _, e in exprs]
-        outs = {
-            term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
-            for term_name in term_names
-        }
+        # inputs = {var: self._load_var(graph.var_name(var)) for var in graph.vars}
+        # term_names = [e.split("<-")[0].strip() for _, e in exprs]
+        # outs = {
+        #     term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
+        #     for term_name in term_names
+        # }
 
-        for var, buf in inputs.items():
-            graph.set_input(var, buf)
+        # for var, buf in inputs.items():
+        #     graph.set_input(var, buf)
 
-        for term_name, buf in outs.items():
-            graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
-        logging.info("Inputs done")
+        # for term_name, buf in outs.items():
+        #     graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
+        # logging.info("Inputs done")
 
-        logging.info("Computing daily scores...")
-        graph.run()
+        # logging.info("Computing daily scores...")
+        # graph.run()
+        # logging.info("Score computed")
+        wir = Wave.compile_or_load([e[1] for e in exprs])
+        outs = self.calf.eval(wir, burn = self.burnin)
         logging.info("Score computed")
 
         for term_name, ktd in outs.items():
