@@ -304,12 +304,32 @@ class LegionVarLoader:
         span = datespan(daterange, burnin)
         self.loader = self.lgn[span]
         self.loaded_vars = {}
+        self.custom_vars = {}
 
     def add_var(self, var, v):
-        if var not in self.loaded_vars:
-            self.loaded_vars[var] = v
+        if var not in self.custom_vars:
+            self.custom_vars[var] = v
+
+    def del_var(self, var):
+        if var in self.custom_vars:
+            del self.custom_vars[var]
+
+    def add_vars(self, vars):
+        if not vars:
+            return
+        for n, v in vars.items():
+            self.custom_vars[n] = v
+
+    def del_vars(self, vars):
+        if not vars:
+            return
+        for n in vars.items():
+            del self.loaded_vars[n]
 
     def get_var(self, var):
+        if var in self.custom_vars:
+            return self.custom_vars[var]
+
         if var not in self.loaded_vars:
             logging.debug(f"Loading {var}")
             self.loaded_vars[var] = self.loader[var]
@@ -426,7 +446,7 @@ class WaveFactor:
         jsn['daterange'] = kwargs_or('date_range', '20130101-20201231')
         jsn['threshold'] = kwargs_or('theshhold', 0.01)
         jsn['score.expr'] = kwargs_or('score_expr', 'abs(ic.ir')
-        jsn['legion'] = kwargs_or('legion', '/home/zyyu/data/legion/cne/EOD')
+        jsn['legion'] = kwargs_or('legion', '/slice/ljs/cne/EOD')
         jsn['metrics'] = kwargs_or('metrics', ["IC", "Ret", "Thret", "Qret", "Trv"])
         jsn['recalc.neg.ic'] = kwargs_or('recalc_neg_ic', -0.1)
         jsn['sc'] = kwargs_or('sc', 'Scale(Bound(')
@@ -442,7 +462,7 @@ class WaveFactor:
         return jsn
 
 
-    def factor(self, raw_exprs):
+    def factor(self, raw_exprs, burnin = -1, vs = None):
         jsn = self.jsn
 
         sc = "sc" in jsn and jsn["sc"] or "Scale"
@@ -461,9 +481,13 @@ class WaveFactor:
 
         exprs = [factor_expr(n, e) for _, n, e in rexprs]
         logging.info(f"Factor expressions formatted {len(exprs)}")
+        burn = burnin < 0 and self.jsn['burn'] or burnin
 
-        return self.wave.eval(exprs, burn = self.jsn['burn'])
+        self.loader.add_vars(vs)
+        res = self.wave.eval(exprs, burn = burn)
+        self.loader.del_vars(vs)
 
+        return res
 
     def save(self, terms, obase):
         dst = Legion(obase, 'w')
@@ -471,8 +495,7 @@ class WaveFactor:
         for path, ktd in terms.items():
             dst[path] = ktd
 
-
-    def score(self, raw_exprs, metrics = None):
+    def score(self, raw_exprs, metrics = None, vs = None):
         jsn = self.jsn
 
         sc = "sc" in jsn and jsn["sc"] or "Scale"
@@ -500,8 +523,10 @@ class WaveFactor:
             expr2idx[n] = i
         logging.info(f"Building expr2idx:{len(expr2idx)}")
 
+        self.loader.add_vars(vs)
         wir = Wave.compile_or_load([e[1] for e in exprs])
         outs = self.wave.eval(wir, score = True, burn = self.jsn['burn'])
+        self.loader.del_vars(vs)
         logging.info("Score computed")
 
         # put same result length expr together and calculate the final_score() group by result length
@@ -531,8 +556,7 @@ class WaveFactor:
         logging.info("Metrics computed")
         return jsn
 
-
-    def metrics(self, raw_exprs, metrics = None):
+    def metrics(self, raw_exprs, metrics = None, vs = None):
         jsn = self.jsn
 
         sc = "sc" in jsn and jsn["sc"] or "Scale"
@@ -559,8 +583,10 @@ class WaveFactor:
             expr2idx[n] = i
 
         logging.info(f"expr2idx:{expr2idx}")
+        self.loader.add_vars(vs)
         wir = Wave.compile_or_load([e[1] for e in exprs])
         outs = self.wave.eval(wir, score = True, burn = self.jsn['burn'])
+        self.loader.del_vars(vs)
         logging.info("Score computed")
 
         for term_name, ktd in outs.items():
