@@ -17,9 +17,15 @@ import matplotlib.pyplot as plt
 
 import os
 import sys
+import pdb
 
 libpath = "/home/zyyu/camp/zyyu/repo/gear.v5/ext/whale/blar/env/lib/python3.8/site-packages/"
 sys.path.insert(0, os.path.realpath(libpath))
+libpath = "/usr/local/lib/python3.8/dist-packages/"
+sys.path.insert(0, os.path.realpath(libpath))
+
+print(sys.path)
+
 from wavel import *
 from legion import *
 from tero.cal import *
@@ -264,7 +270,7 @@ def calc_date_range_score(jsn, score_expr, expr2idx, shape, length_scores, lengt
     for expr in accepted_exprs:
         expr["score"] = get_expr_score(expr, score_expr, "ic.ir")
 
-    jsn["exprs"] = [e for e in accepted_exprs if e["score"] >= jsn["threshold"]]
+    # jsn["exprs"] = [e for e in accepted_exprs if e["score"] >= jsn["threshold"]]
 
     return jsn
 
@@ -318,23 +324,26 @@ class LegionVarLoader:
         if not vars:
             return
         for n, v in vars.items():
+            logging.debug(f"Add custom var {n}")
             self.custom_vars[n] = v
 
     def del_vars(self, vars):
         if not vars:
             return
-        for n in vars.items():
-            del self.loaded_vars[n]
+        for n in vars.keys():
+            logging.debug(f"Del custom var {n}")
+            del self.custom_vars[n]
 
     def get_var(self, var):
         if var in self.custom_vars:
+            logging.debug(f"Loading custom var {var}")
             return self.custom_vars[var]
 
         if var not in self.loaded_vars:
-            logging.debug(f"Loading {var}")
+            logging.debug(f"Loading var: {var}")
             self.loaded_vars[var] = self.loader[var]
         else:
-            logging.debug(f"Bypass {var} loading")
+            logging.debug(f"Bypass var loading : {var}")
         return self.loaded_vars[var]
 
     def dims(self):
@@ -530,7 +539,8 @@ class WaveFactor:
             es = [buile_score_expr(op, n, e, jsn["fwd"], self.jsn['fwdexpr'], self.jsn['hedge']) for _, n, e in rexprs]
             exprs.extend(es)
         logging.info("IC expressions formatted")
-
+        # pdb.set_trace()
+        logging.info(exprs)
         expr2idx = {}  # expr name to index
         for i, n, _ in rexprs:
             expr2idx[n] = i
@@ -567,6 +577,7 @@ class WaveFactor:
         jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, self.jsn['burn'])
 
         logging.info("Metrics computed")
+        logging.info(jsn)
         return jsn
 
     def metrics(self, raw_exprs, metrics = None, vs = None):

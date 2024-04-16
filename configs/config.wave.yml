@@ -1,0 +1,27 @@
+name: mdstd
+
+gpu: 7
+
+seed: 1024
+code: CSI300
+pool: 400
+step: 10000
+
+train: "20110101-20201220"
+verify: "20210101-0630"
+test: "20210701-20220630"
+
+uri: /home/zyyu/.qlib/qlib_data/cne
+features:
+  - "md_std*"
+
+wave:
+  legion: "/home/zyyu/data/legion/cne/EOD"
+  univ: CSI300
+  freq: EOD
+  fwd: 5
+  threshold: 0.01
+  score.expr: "abs(ic.ir)"
+  fwdexpr: "bfwd/Retv225_rt_Retv225/fwd_5"
+  hedge: "bfwd/wdIdxEod_md_Ret/fwd_5/000905.SH"
+  burnin: 192

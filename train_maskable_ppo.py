@@ -49,6 +49,7 @@ print("Provider URI: ", provider_uri)
 
 print(seed, code, pool, step)
 print(traindr, verdr, testdr)
+print(conf['wave'])
 
 
 # get first sub directory
@@ -95,6 +96,7 @@ from alphagen.rl.policy import LSTMSharedNet
 from alphagen.utils.random import reseed_everything
 from alphagen.rl.env.core import AlphaEnvCore
 from alphagen_qlib.calculator import QLibStockDataCalculator
+from alphagen_qlib.wavecalculator import WaveCalculator
 from features import FeatureType
 
 from alphagen.data.expression import *
@@ -182,30 +184,18 @@ def main(
 ):
     reseed_everything(seed)
 
+    # pdb.set_trace()
+
     # device = torch.device('cpu')
     device = torch.device(f'cuda:{gpuid}')
 
-    #vwap = Feature(FeatureType.WDB_ASHAREENERGYINDEXADJ_BOLL_LOWER)
-    vwap = Feature(FeatureType.MD_STD_VWP)
-    target = Log(Ref(vwap, -6) / Ref(vwap, -1))
-    # target = Feature(FeatureType.VWAP)
-
-    # You can re-implement AlphaCalculator instead of using QLibStockDataCalculator.
-    data_train = StockData(instrument=instruments,
-                           start_time=traindr[0],
-                           end_time=traindr[1],
-                           device=device)
-    data_valid = StockData(instrument=instruments,
-                           start_time=verdr[0],
-                           end_time=verdr[1],
-                           device=device)
-    data_test = StockData(instrument=instruments,
-                          start_time=testdr[0],
-                          end_time=testdr[1],
-                          device=device)
-    calculator_train = QLibStockDataCalculator(data_train, target)
-    calculator_valid = QLibStockDataCalculator(data_valid, target)
-    calculator_test = QLibStockDataCalculator(data_test, target)
+    wconf = conf['wave']
+    wconf['daterange'] = conf['train']
+    calculator_train = WaveCalculator(**wconf)
+    wconf['daterange'] = conf['verify']
+    calculator_valid = WaveCalculator(**wconf)
+    wconf['daterange'] = conf['test']
+    calculator_test = WaveCalculator(**wconf)
 
     pool = AlphaPool(
         capacity=pool_capacity,
@@ -253,7 +243,7 @@ def main(
         total_timesteps=steps,
         callback=checkpoint_callback,
         tb_log_name=f'{name_prefix}_{timestamp}',
-        progress_bar=True,
+        # progress_bar=True,
     )
 
 
