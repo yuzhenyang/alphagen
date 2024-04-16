@@ -62,17 +62,35 @@ class WaveCalculator(AlphaCalculator):
     def _calc_alpha(self, expr: Expression) -> KTD:
         return self.wavecalc.factor([Qlib2Wave.waveexpr(expr)])
 
-    def _get_result(self, ret):
-        if len(ret['exprs']) > 0 and self.SCORER in ret['exprs'][0]:
-            return ret['exprs'][0][self.SCORER]
+    def _get_result(self, ret, field = None):
+        field = field is None and self.SCORER or field
+        if len(ret['exprs']) > 0 and field in ret['exprs'][0]:
+            return ret['exprs'][0][field]
         else:
             return np.nan
 
-    # TODO: imp
+    def _build_fac_exprs(self, expr1: Expression, expr2: Expression) -> str:
+        axpr1, axpr2 = Qlib2Wave.waveexpr(expr1), Qlib2Wave.waveexpr(expr2)
+        euid = genuid('alpgen.')
+        fac1, fac2 = f"{euid}.f1", f"{euid}.f2"
+        tfac1 = f"{fac1} <- {axpr1}"
+        tfac2 = f"{fac2} <- {axpr2}"
+        return [fac1, fac2], [tfac1, tfac2]
+
+    def _corr(self, x, y):
+        valid_index = ~np.isnan(x) & ~np.isnan(y)
+        valid_x = x[valid_index]
+        valid_y = y[valid_index]
+        corr = np.corrcoef(valid_x.reshape((-1)), valid_y.reshape((-1)))[0, 1]
+        return corr
+
     def calc_mutual_IC(self, expr1: Expression, expr2: Expression) -> float:
-        print("WaveCalculator.calc_mutual_IC not IMP")
         # pdb.set_trace()
-        return 0.25
+        facs, exprs = self._build_fac_exprs(expr1, expr2)
+        ret = self.wavecalc.rawfactor(exprs)
+        corr = self._corr(ret[facs[0]], ret[facs[1]])
+        print(f"calc_mutual_IC corr: {corr} {str(expr1)} - {str(expr2)}")
+        return corr
 
     def calc_single_IC_ret(self, expr: Expression, custom_vs = None) -> float:
         e = [Qlib2Wave.waveexpr(expr)]

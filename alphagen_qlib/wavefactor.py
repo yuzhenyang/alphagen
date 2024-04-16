@@ -517,34 +517,44 @@ class WaveFactor:
         for path, ktd in terms.items():
             dst[path] = ktd
 
-    def score(self, raw_exprs, metrics = None, vs = None):
+    def score(self, raw_exprs, evaly = True, metrics = None, vs = None):
         jsn = self.jsn
 
-        sc = "sc" in jsn and jsn["sc"] or "Scale"
-        logging.debug(f"SC method: {sc}")
-        jsn['exprs'] = [{'name':'.'.join(['expr', str(i), md5str(expr)]), 'expr': expr} for i, expr in enumerate(raw_exprs)]
-        logging.info(jsn['exprs'])
+        expr2idx = {}  # expr name to index
+        if evaly:
+            sc = "sc" in jsn and jsn["sc"] or "Scale"
+            logging.debug(f"SC method: {sc}")
+            jsn['exprs'] = [{'name':'.'.join(['expr', str(i), md5str(expr)]), 'expr': expr} for i, expr in enumerate(raw_exprs)]
+            logging.info(jsn['exprs'])
 
-        rexprs = [
-            (i, e["name"], scale_bound_expr(e["expr"], sc)) for i, e in enumerate(jsn['exprs']) if workable_expr(e["expr"])
-        ]
-        logging.info(f"Read {len(rexprs)} exprssions")
+            rexprs = [
+                (i, e["name"], scale_bound_expr(e["expr"], sc)) for i, e in enumerate(jsn['exprs']) if workable_expr(e["expr"])
+            ]
+            logging.info(f"Read {len(rexprs)} exprssions")
 
-        # build scoring exprs
-        exprs = []
-        eval_metrics = metrics if metrics else jsn["metrics"]
-        for m in eval_metrics:
-            op = m.replace("+", "")
-            # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
-            es = [buile_score_expr(op, n, e, jsn["fwd"], self.jsn['fwdexpr'], self.jsn['hedge']) for _, n, e in rexprs]
-            exprs.extend(es)
+            # build scoring exprs
+            exprs = []
+            eval_metrics = metrics if metrics else jsn["metrics"]
+            for m in eval_metrics:
+                op = m.replace("+", "")
+                # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
+                es = [buile_score_expr(op, n, e, jsn["fwd"], self.jsn['fwdexpr'], self.jsn['hedge']) for _, n, e in rexprs]
+                exprs.extend(es)
+            for i, n, _ in rexprs:
+                expr2idx[n] = i
+        else:
+            exprs = raw_exprs
+            for i, e in enumerate(exprs):
+                sps = e.split(' <- ')
+                if len(sps) > 0:
+                    expr2idx[sps[0]] = i
+
+        logging.info(f"Expr2idx:{expr2idx}")
+        logging.info(f"Building expr2idx:{len(expr2idx)}")
         logging.info("IC expressions formatted")
         # pdb.set_trace()
         logging.info(exprs)
-        expr2idx = {}  # expr name to index
-        for i, n, _ in rexprs:
-            expr2idx[n] = i
-        logging.info(f"Building expr2idx:{len(expr2idx)}")
+
 
         self.loader.add_vars(vs)
         wir = Wave.compile_or_load([e[1] for e in exprs])
