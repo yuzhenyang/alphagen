@@ -29,7 +29,7 @@ class WaveCalculator(AlphaCalculator):
         for n, v in facs:
             wf = wf + v * weights[namemap[n]]
 
-        return {f"{euid}", wf}
+        return {euid : wf}
 
     def calc_single_IC_ret(self, expr: Expression, custom_vs = None) -> float:
         pdb.set_trace()
@@ -56,7 +56,7 @@ class WaveCalculator(AlphaCalculator):
         for n, v in facs:
             wf = wf + v * weights[namemap[n]]
 
-        custom_vs = {f"{euid}", wf}
+        custom_vs = {euid : wf}
         return self.calc_singel_IC_ret(euid, custom_vs)
 
     def calc_pool_rIC_ret(self, exprs: List[Expression], weights: List[float]) -> float:
