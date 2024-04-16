@@ -324,26 +324,27 @@ class LegionVarLoader:
         if not vars:
             return
         for n, v in vars.items():
-            logging.debug(f"Add custom var {n}")
+            # logging.debug(f"Add custom var {n}")
             self.custom_vars[n] = v
 
     def del_vars(self, vars):
         if not vars:
             return
         for n in vars.keys():
-            logging.debug(f"Del custom var {n}")
+            # logging.debug(f"Del custom var {n}")
             del self.custom_vars[n]
 
     def get_var(self, var):
         if var in self.custom_vars:
-            logging.debug(f"Loading custom var {var}")
+            # logging.debug(f"Loading custom var {var}")
             return self.custom_vars[var]
 
         if var not in self.loaded_vars:
-            logging.debug(f"Loading var: {var}")
+            # logging.debug(f"Loading var: {var}")
             self.loaded_vars[var] = self.loader[var]
         else:
-            logging.debug(f"Bypass var loading : {var}")
+            # logging.debug(f"Bypass var loading : {var}")
+            pass
         return self.loaded_vars[var]
 
     def dims(self):
@@ -587,7 +588,7 @@ class WaveFactor:
         jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, self.jsn['burn'])
 
         logging.info("Metrics computed")
-        logging.info(jsn)
+        # logging.info(jsn)
         return jsn
 
     def metrics(self, raw_exprs, metrics = None, vs = None):
