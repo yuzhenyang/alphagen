@@ -489,6 +489,19 @@ class WaveFactor:
 
         return res
 
+    def rawfactor(self, exprs, burnin = -1, vs = None):
+        logging.debug(f"Raw factor {len(exprs)}")
+        logging.debug(f"Expr {exprs[0]}")
+        assert('<-' in exprs[0])
+
+        burn = burnin < 0 and self.jsn['burn'] or burnin
+
+        self.loader.add_vars(vs)
+        res = self.wave.eval(exprs, burn = burn)
+        self.loader.del_vars(vs)
+
+        return res
+
     def save(self, terms, obase):
         dst = Legion(obase, 'w')
 
