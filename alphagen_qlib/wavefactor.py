@@ -23,10 +23,11 @@ sys.path.insert(0, os.path.realpath(libpath))
 from wavel import *
 from legion import *
 from tero.cal import *
+import wavel
 
-libpath = "/home/zyyu/workspace/rl/alphagen/alphagen_qlib"
-sys.path.insert(0, os.path.realpath(libpath))
-from whale import Wave, Whale
+# libpath = "/home/zyyu/workspace/rl/alphagen/alphagen_qlib"
+# sys.path.insert(0, os.path.realpath(libpath))
+# from whale import Wave, Whale
 
 """
 sample input for scores.py
@@ -497,21 +498,142 @@ def md5str(s, return_bits = 8):
     return hashlib.md5(s.encode('utf-8')).hexdigest()[-return_bits:]
 
 
-class WaveFactor:
-    lgn = None
-    loader = None
-    graph = None
-    jsn = None
-    burnin = 192
-    loglvl = logging.ERROR
-    loaded_vs = {}
+def datespan(daterange, burn):
+    dates = bizdays(daterange)
+    begin = bizday(dates[0], -burn).strftime("%Y%m%d")
+    return begin + "-" + dates[-1].strftime("%Y%m%d")
 
-    ready = False
+
+class LegionVarLoader:
+    def __init__(self, root, univ, freq, daterange, burnin):
+        self.lgn = Legion(root.split(";"), univ = univ, freq = freq)
+        span = datespan(daterange, burnin)
+        self.loader = self.lgn[span]
+        self.loaded_vars = {}
+    
+    def add_var(self, var, v):
+        if var not in self.loaded_vars:
+            self.loaded_vars[var] = v
+
+    def get_var(self, var):
+        if var not in self.loaded_vars:
+            logging.debug(f"Loading {var}")
+            self.loaded_vars[var] = self.loader[var]
+        else:
+            logging.debug(f"Bypass {var} loading")
+        return self.loaded_vars[var]
+
+    def dims(self):
+        return self.loader.dims()
+
+class Wave(wavel.Wave):
+    def __init__(self, loader, **kw):
+        wavel.Wave.__init__(self)
+        # self.score = kw.get('score', False)
+        self.max_parallelism = kw.get('max_parallelism', 0)
+        self.loader = loader
+        self.dims = loader.dims()
+        self.shape = tuple(map(len, self.dims))
+        if len(self.shape) != 3:
+            raise ValueError('invalid shape: len(self.shape) != 3')
+
+    def eval(self, exprs, burn = 0, score = False):
+        # if self.done:
+        #    raise RuntimeError('NO re-run, please define a new Wave')
+
+        wir = self.compile_or_load(exprs)
+
+        # build nodes (side effect: self.vars and self.facs are also built)
+        self.build(wir)
+
+        # setup input buffers according to self.vars
+        inputs = {}
+        for var in self.vars:
+            # load KTD from legion
+            inputs[var] = self.loader.get_var(self.var_name(var))
+            self.set_input(var, inputs[var])
+
+        # setup output buffers according to self.facs
+        ans = {}
+        for fac in self.facs:
+            name = self.fac_name(fac)
+            dim0 = score and [f"{name}.{i+1}" for i in range(Wave.result_len_by_name(name))] or self.dims[0]                    
+            ans[name] = KTD(dim0, self.dims[1], self.dims[2])
+            self.set_output(fac, ans[name], len(dim0))
+
+        # run wave and return results
+        self.run(max_parallelism=self.max_parallelism)
+
+        return {name: v(ds = [burn, None]) for name, v in
+                ans.items()}
+
+    @staticmethod
+    def result_len_by_name(term_name):
+        ps = term_name.split("./")
+        if len(ps) < 2:
+            return 1
+        dot_rindex = ps[0].rfind(".")
+        return int(ps[0][dot_rindex + 1 :])
+
+    @staticmethod
+    def compile(exprs):
+        "Compile expressions, return WIR"
+        if not exprs:
+            raise ValueError("compiling empty expression(s)")
+        ctx = wavel.Context()
+        if isinstance(exprs, str):
+            wavel.execute(exprs, ctx)
+        else:
+            for expr in exprs:
+                wavel.execute(expr, ctx)
+        return wavel.WIR(ctx)
+
+    @staticmethod
+    def load(fname):
+        "Load wave file (compiled or not), return WIR"
+        if not os.path.exists(fname):
+            raise RuntimeError(fname + ' not found!')
+        if not os.access(fname, os.W_OK):
+            raise RuntimeError(fname + ' not readable!')
+        return wavel.WIR(fname)
+
+    @staticmethod
+    def compile_or_load(exprs):
+        if isinstance(exprs, wavel.WIR):
+            # loaded bytecode
+            return exprs
+        elif isinstance(exprs, str):
+            if '<-' in exprs:
+                # single expr
+                return Wave.compile(exprs)
+            else:
+                # bytecode file
+                return Wave.load(exprs)
+        elif isinstance(exprs, list):
+            # list[expr]
+            return Wave.compile(exprs)
+        else:
+            raise TypeError("invalid type")
+
+
+class WaveFactor:
+    # lgn = None
+    # loader = None
+    # graph = None
+    # jsn = None
+    # burnin = 192
+    # loglvl = logging.ERROR
+    # loaded_vs = {}
+
+    # ready = False
 
     def __init__(self, **kwargs):
-        self.jsn = self._build_default([], **kwargs)
-        self.calf = Whale(self.jsn['legion'].split(";"), univ=self.jsn['univ'],
-            freq=self.jsn['freq'])[self.jsn["daterange"]]
+        jsn = self._build_default([], **kwargs)
+        self.jsn = jsn
+        self.loader = LegionVarLoader(jsn['legion'], jsn['univ'],
+                        jsn['freq'], jsn['daterange'], jsn['burn'])
+        self.wave = Wave(self.loader)
+
         logging.basicConfig(format="[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S",
             level=self.jsn['loglevel'])
 
@@ -536,63 +658,53 @@ class WaveFactor:
         jsn['exprs'] = [{'name':'expr.'+str(i), 'expr': expr} for i, expr in enumerate(exprs)]
         jsn['loglevel'] = kwargs_or('loglevel', logging.DEBUG)
 
+        burnin = "burnin" in jsn and jsn["burnin"] or 0
+        burnin = burnin > 0 and burnin or (jsn['freq'] == "EOD" and 192 or 21)
+        jsn['burn'] = burnin
+
         return jsn
 
+    # def _prepare(self):
+    #     if self.ready:
+    #         return self.jsn
 
-    def _load_var(self, var):
-        if var in self.loaded_vs:
-            logging.debug(f"Bypass {var} loading")
-            return self.loaded_vs[var]
+    #     jsn = self.jsn
+    #     root = jsn["legion"]
+    #     univ = jsn["univ"]
+    #     freq = jsn["freq"]
+    #     date_spec = get_date_range(jsn)
+    #     burnin = "burnin" in jsn and jsn["burnin"] or 0
+    #     burnin = burnin > 0 and burnin or (freq == "EOD" and 192 or 21)
 
-        self.loaded_vs[var] = self.loader[var]
-        return self.loaded_vs[var]
+    #     self.jsn['burn'] = burnin
 
+    #     dates = bizdays(date_spec)
+    #     lgn_begin = bizday(dates[0], -burnin).strftime("%Y%m%d")
+    #     lgn_date_spec = lgn_begin + "-" + dates[-1].strftime("%Y%m%d")
+    #     logging.info(f"Legion root: {root}; univ: {univ}; freq: {freq}")
+    #     logging.info(f"Date spec: {date_spec}; burnin: {burnin}; legion: {lgn_date_spec}")
 
-    def _unload_var(self, var):
-        if var in self.loaded_vs:
-            del self.loaded_vs[var]
+    #     idx_path = jsn["hedge"]
+    #     fwd_expr = jsn["fwdexpr"]
+    #     logging.info(f"Index path: {idx_path} Fwd expr: {fwd_expr}")
+    #     score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
+    #     tse = trans_score_expr(score_expr)
+    #     logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
 
-    def _prepare(self):
-        if self.ready:
-            return self.jsn
+    #     self.lgn = Legion(root.split(";"), debug=False)
+    #     logging.debug(f"Legion root {root} opened")
 
-        jsn = self.jsn
-        root = jsn["legion"]
-        univ = jsn["univ"]
-        freq = jsn["freq"]
-        date_spec = get_date_range(jsn)
-        burnin = "burnin" in jsn and jsn["burnin"] or 0
-        burnin = burnin > 0 and burnin or (freq == "EOD" and 192 or 21)
+    #     self.loader = self.lgn.loader(lgn_date_spec, univ=univ, freq=freq)
 
-        self.burnin = burnin
+    #     self.loaded_vs["na/na"] = self.loader["=na"]
 
-        dates = bizdays(date_spec)
-        lgn_begin = bizday(dates[0], -burnin).strftime("%Y%m%d")
-        lgn_date_spec = lgn_begin + "-" + dates[-1].strftime("%Y%m%d")
-        logging.info(f"Legion root: {root}; univ: {univ}; freq: {freq}")
-        logging.info(f"Date spec: {date_spec}; burnin: {burnin}; legion: {lgn_date_spec}")
+    #     self.graph = Wave()
+    #     shape = tuple(map(len, self.loader.dims()))
+    #     logging.info(f"Data dimension: {str(shape)}")
+    #     self.graph.shape = shape
 
-        idx_path = jsn["hedge"]
-        fwd_expr = jsn["fwdexpr"]
-        logging.info(f"Index path: {idx_path} Fwd expr: {fwd_expr}")
-        score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
-        tse = trans_score_expr(score_expr)
-        logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
-
-        self.lgn = Legion(root.split(";"), debug=False)
-        logging.debug(f"Legion root {root} opened")
-
-        self.loader = self.lgn.loader(lgn_date_spec, univ=univ, freq=freq)
-
-        self.loaded_vs["na/na"] = self.loader["=na"]
-
-        self.graph = Wave()
-        shape = tuple(map(len, self.loader.dims()))
-        logging.info(f"Data dimension: {str(shape)}")
-        self.graph.shape = shape
-
-        self.ready = True
-        return self.jsn
+    #     self.ready = True
+    #     return self.jsn
 
 
     def factor(self, raw_exprs):
@@ -615,9 +727,7 @@ class WaveFactor:
         exprs = [factor_expr(n, e) for _, n, e in rexprs]
         logging.info(f"Factor expressions formatted {len(exprs)}")
 
-        wir = Wave.compile_or_load(exprs)
-
-        return self.calf.eval(wir, burn = self.burnin)
+        return self.wave.eval(exprs, burn = self.jsn['burn'])
 
 
     def save(self, terms, obase):
@@ -656,7 +766,7 @@ class WaveFactor:
         logging.info(f"Building expr2idx:{len(expr2idx)}")
 
         wir = Wave.compile_or_load([e[1] for e in exprs])
-        outs = self.calf.eval(wir, score = True, burn = self.burnin)
+        outs = self.wave.eval(wir, score = True, burn = self.jsn['burn'])
         logging.info("Score computed")
 
         # put same result length expr together and calculate the final_score() group by result length
@@ -681,7 +791,7 @@ class WaveFactor:
         tse = trans_score_expr(score_expr)
         logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
 
-        jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, self.burnin)
+        jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, self.jsn['burn'])
 
         logging.info("Metrics computed")
         return jsn
@@ -715,12 +825,12 @@ class WaveFactor:
 
         logging.info(f"expr2idx:{expr2idx}")
         wir = Wave.compile_or_load([e[1] for e in exprs])
-        outs = self.calf.eval(wir, score = True, burn = self.burnin)
+        outs = self.wave.eval(wir, score = True, burn = self.jsn['burn'])
         logging.info("Score computed")
 
         for term_name, ktd in outs.items():
             expr_name, metric = expr_metrics_from_name(term_name)
-            jsn['exprs'][expr2idx[expr_name]][metric] = ktd[:,:,self.burnin:].flatten(order="F").tolist()
+            jsn['exprs'][expr2idx[expr_name]][metric] = ktd[:,:,self.jsn['burn']:].flatten(order="F").tolist()
 
         return jsn
 
