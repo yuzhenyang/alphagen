@@ -25,64 +25,7 @@ from legion import *
 from tero.cal import *
 import wavel
 
-# libpath = "/home/zyyu/workspace/rl/alphagen/alphagen_qlib"
-# sys.path.insert(0, os.path.realpath(libpath))
-# from whale import Wave, Whale
-
-"""
-sample input for scores.py
-{
-  "legion":"/slice/ljs/cne/EOD",
-  "univ": "ZZ800",
-  "freq": "EOD",
-  "y":"retv225.my",
-  "hedge":"hedge/000905.SH",
-  "fwd":5,
-  "burnin":240,
-  "metrics": ["IC","Ret", "Thret", "Tret", "Lhret", "Lret", "Qret"],
-  "score":"IC",
-  "threshold":0.02,
-  "date.range": ["20170401-20191231"],
-  "eval.period": ["20170401-1231","20180101-1231","20190101-1231"],
-  "exprs": [
-    {
-      "name": "expr.11",
-      "expr": "Scale(Prod(TsEma(Rank(cq/zy1a/ZY1.v84),20),TsStd(cq/zy1a/ZY1.v45,122)))",
-    },
-      "name": "expr.14",
-      "expr": "Scale(TsMedian(Div(mdn/H2PC,mdn/H2V),122))",
-    },
-    {
-      "name": "expr.113",
-      "expr": "Scale(DeMean(Log(TsMax(mdn/Vol.ldm5,48))))",
-    }
-  ]
-}
-"""
 QRET_QUANTILE_NUM = 10
-# QRET_OUT_ORDER_NUM = [0] * QRET_QUANTILE_NUM
-# QRET_HIGH_DIFF_SIGN = 0
-# QRET_LOW_DIFF_SIGN = 0
-# QRET_TOTAL_EXPR_NUM = 0
-
-
-# def reset_qret_stat():
-#     global QRET_OUT_ORDER_NUM, QRET_HIGH_DIFF_SIGN, QRET_LOW_DIFF_SIGN, QRET_TOTAL_EXPR_NUM
-#     QRET_OUT_ORDER_NUM = [0] * QRET_QUANTILE_NUM
-#     QRET_HIGH_DIFF_SIGN = 0
-#     QRET_LOW_DIFF_SIGN = 0
-#     QRET_TOTAL_EXPR_NUM = 0
-
-
-# def build_qret_stat():
-#     r = {
-#         "out.of.order": QRET_OUT_ORDER_NUM,
-#         "high.sign.diff": QRET_HIGH_DIFF_SIGN,
-#         "low.sign.diff": QRET_LOW_DIFF_SIGN,
-#         "total.expr.num": QRET_TOTAL_EXPR_NUM,
-#     }
-
-#     return r
 
 
 def qret_ret_rsquare(ret_ics):
@@ -282,155 +225,6 @@ def get_date_range(jsn):
         return jsn["date.range"]
 
 
-# def calc_score(jsn, recalc_neg_ic_thresh):
-#     """
-#     "legion":["/cache/ag/legion/cne"],
-#     "univ": "ZZ800",
-#     "freq": "DAILY",
-#     "y":"retv225.my",
-#     "ypath":"retv225.my/fwd_5/fwd.Retv225.DAILY.5",
-#     "fwdexpr":"retv225.my/fwd_5/fwd.Retv225.DAILY.5",
-#     "fwd":5,
-#     "burnin":240,
-#     "metrics": ["IC","Aret","Tret"],
-#     "score":"ic",
-#     "threshold":0.02,
-#     "date-range": "20170401-20191231",
-#     "eval-period": ["20170401-1231","20180101-1231","20190101-1231"],
-#     """
-
-#     # root, date_spec, outfile, univ, freq, fwd, yret, ic, ir, burnin
-#     # basic things
-#     root = jsn["legion"]
-#     univ = jsn["univ"]
-#     freq = jsn["freq"]
-#     date_spec = get_date_range(jsn)
-#     burnin = "burnin" in jsn and jsn["burnin"] or 0
-#     burnin = burnin > 0 and burnin or (freq == "EOD" and 192 or 21)
-
-#     dates = bizdays(date_spec)
-#     lgn_begin = bizday(dates[0], -burnin).strftime("%Y%m%d")
-#     lgn_date_spec = lgn_begin + "-" + dates[-1].strftime("%Y%m%d")
-#     logging.info("Legion root: %s" % (root))
-#     logging.info("Date spec: %s; burnin: %d; legion: %s" % (date_spec, burnin, lgn_date_spec))
-#     logging.info(f"Recalc neg ic threshold: {recalc_neg_ic_thresh}")
-
-#     idx_path = get_index_path(jsn)
-#     fwd_expr = get_fwd_info(jsn)
-#     logging.info("Idx: %s" % (idx_path))
-#     logging.info("Fwd expr: %s" % (fwd_expr))
-#     score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
-#     tse = trans_score_expr(score_expr)
-#     logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
-
-#     # legion
-#     logging.info("Open %s as input data directory" % root)
-#     lgn = Legion(root.split(";"), debug=False)
-#     logging.debug("Opened")
-
-#     loader = lgn.loader(lgn_date_spec, univ=univ, freq=freq)
-#     na = loader["=na"]
-
-#     def load(var):
-#         if var == "na/na":
-#             return na
-#         return loader[var]
-
-#     # expr
-#     rexprs = [
-#         (i, e["name"], scale_bound_expr(e["expr"])) for i, e in enumerate(jsn["exprs"]) if workable_expr(e["expr"])
-#     ]  # Workaround: remove exprs with none implemented OP
-#     logging.info("Read %s exprssions" % len(rexprs))
-
-#     # build scoring exprs
-#     exprs = []
-#     for m in jsn["metrics"]:
-#         op = m.replace("+", "")
-#         # sc.thret/exprname1 <- Thret(Scale(Bound(TsMean(moneyflow/XXXX, 5))), retv225/fwd_5/fwd.Ret.DAILY.5)
-#         es = [buile_score_expr(op, n, e, jsn["fwd"], fwd_expr, idx_path) for _, n, e in rexprs]
-#         exprs.extend(es)
-#     logging.info("IC expressions formatted")
-
-#     expr2idx = {}  # expr name to index
-#     for i, n, _ in rexprs:
-#         expr2idx[n] = i
-
-#     # wave
-#     graph = Wave()
-#     shape = tuple(map(len, loader.dims()))
-#     graph.shape = shape
-#     graph.build([e for _, e in exprs])
-#     logging.info("Graph compiled")
-
-#     logging.info("Prepare inputs...")
-#     inputs = {var: load(graph.var_name(var)) for var in graph.vars}
-#     term_names = [e.split("<-")[0].strip() for _, e in exprs]
-#     outs = {
-#         term_name: np.ndarray((result_len_from_name(term_name), shape[1], shape[2]), order="F")
-#         for term_name in term_names
-#     }
-
-#     for var, buf in inputs.items():
-#         graph.set_input(var, buf)
-
-#     for term_name, buf in outs.items():
-#         graph.set_output(graph.fac_node(term_name), buf, buf.shape[0])
-#     logging.info("Inputs done")
-
-#     logging.info("Computing daily scores...")
-#     graph.run()
-#     logging.info("Score computed")
-
-#     # put same result length expr together and calculate the final_score() group by result length
-#     length_scores = defaultdict(list)  # length : score_ktd
-#     length_idx = defaultdict(int)  # length : current_index
-#     length_term2inx = defaultdict(lambda: defaultdict(int))  # length : {term_name:index}
-
-#     for term_name, ktd in outs.items():
-#         rlen = result_len_from_name(term_name)
-#         length_scores[rlen].append(ktd[:rlen, :, :].flatten(order="F").tolist())
-#         length_term2inx[rlen][term_name] = length_idx[rlen]
-#         length_idx[rlen] += 1
-
-#     del outs
-#     gc.collect()
-
-#     logging.info("Computing final scores...")
-#     jsn = calc_date_range_score(jsn, tse, expr2idx, shape, length_scores, length_term2inx, burnin)
-#     logging.info("Metrics computed")
-
-#     # Calc Neg(expr) for IC < 0
-#     if recalc_neg_ic_thresh is not None:
-#         neg_ic_jsn = copy.deepcopy(jsn)
-#         neg_ic_jsn["exprs"] = [
-#             expr for expr in neg_ic_jsn["exprs"] if "ic.mean" in expr and expr["ic.mean"] <= recalc_neg_ic_thresh
-#         ]
-#         logging.info(
-#             "Recalculate the negtive IC exprs number: %d for threshold: %.4f",
-#             len(neg_ic_jsn["exprs"]),
-#             recalc_neg_ic_thresh,
-#         )
-#         if len(neg_ic_jsn["exprs"]) <= 100:
-#             logging.info("Too less negtive IC exprs %d, recalculation ignored", len(neg_ic_jsn["exprs"]))
-#         else:
-#             for es in neg_ic_jsn["exprs"]:
-#                 es["name"] = f"{es['name']}.neg"
-#                 es["expr"] = f"Neg({es['expr']})"
-#                 if "chromo" in es:
-#                     es["chromo"] = f"Neg({es['chromo']})"
-
-#             reset_qret_stat()
-#             neg_ic_jsn = calc_score(neg_ic_jsn, None)
-
-#             jsn["exprs"].extend(neg_ic_jsn["exprs"])
-#             jsn["qstat.neg"] = build_qret_stat()
-#     jsn["exprs"] = sorted(jsn["exprs"], key=lambda x: x["score"], reverse=True)
-#     logging.info(f"Total {len(jsn['exprs'])} expr returned")
-
-#     return jsn
-
-
-#
 def calc_date_range_score(jsn, score_expr, expr2idx, shape, length_scores, length_term2inx, burnin, days=0):
     scs = {}  # the all final result
     # calculate the final scores, and put the scores together
@@ -510,7 +304,7 @@ class LegionVarLoader:
         span = datespan(daterange, burnin)
         self.loader = self.lgn[span]
         self.loaded_vars = {}
-    
+
     def add_var(self, var, v):
         if var not in self.loaded_vars:
             self.loaded_vars[var] = v
@@ -526,6 +320,7 @@ class LegionVarLoader:
     def dims(self):
         return self.loader.dims()
 
+
 class Wave(wavel.Wave):
     def __init__(self, loader, **kw):
         wavel.Wave.__init__(self)
@@ -538,9 +333,6 @@ class Wave(wavel.Wave):
             raise ValueError('invalid shape: len(self.shape) != 3')
 
     def eval(self, exprs, burn = 0, score = False):
-        # if self.done:
-        #    raise RuntimeError('NO re-run, please define a new Wave')
-
         wir = self.compile_or_load(exprs)
 
         # build nodes (side effect: self.vars and self.facs are also built)
@@ -557,23 +349,18 @@ class Wave(wavel.Wave):
         ans = {}
         for fac in self.facs:
             name = self.fac_name(fac)
-            dim0 = score and [f"{name}.{i+1}" for i in range(Wave.result_len_by_name(name))] or self.dims[0]                    
+            dim0 = score and [f"{name}.{i+1}" for i in range(Wave.rlen_by_name(name))] or self.dims[0]
             ans[name] = KTD(dim0, self.dims[1], self.dims[2])
             self.set_output(fac, ans[name], len(dim0))
 
         # run wave and return results
         self.run(max_parallelism=self.max_parallelism)
 
-        return {name: v(ds = [burn, None]) for name, v in
-                ans.items()}
+        return {name: v(ds = [burn, None]) for name, v in ans.items()}
 
     @staticmethod
-    def result_len_by_name(term_name):
-        ps = term_name.split("./")
-        if len(ps) < 2:
-            return 1
-        dot_rindex = ps[0].rfind(".")
-        return int(ps[0][dot_rindex + 1 :])
+    def rlen_by_name(term_name):
+        return result_len_from_name(term_name)
 
     @staticmethod
     def compile(exprs):
@@ -617,16 +404,6 @@ class Wave(wavel.Wave):
 
 
 class WaveFactor:
-    # lgn = None
-    # loader = None
-    # graph = None
-    # jsn = None
-    # burnin = 192
-    # loglvl = logging.ERROR
-    # loaded_vs = {}
-
-    # ready = False
-
     def __init__(self, **kwargs):
         jsn = self._build_default([], **kwargs)
         self.jsn = jsn
@@ -663,48 +440,6 @@ class WaveFactor:
         jsn['burn'] = burnin
 
         return jsn
-
-    # def _prepare(self):
-    #     if self.ready:
-    #         return self.jsn
-
-    #     jsn = self.jsn
-    #     root = jsn["legion"]
-    #     univ = jsn["univ"]
-    #     freq = jsn["freq"]
-    #     date_spec = get_date_range(jsn)
-    #     burnin = "burnin" in jsn and jsn["burnin"] or 0
-    #     burnin = burnin > 0 and burnin or (freq == "EOD" and 192 or 21)
-
-    #     self.jsn['burn'] = burnin
-
-    #     dates = bizdays(date_spec)
-    #     lgn_begin = bizday(dates[0], -burnin).strftime("%Y%m%d")
-    #     lgn_date_spec = lgn_begin + "-" + dates[-1].strftime("%Y%m%d")
-    #     logging.info(f"Legion root: {root}; univ: {univ}; freq: {freq}")
-    #     logging.info(f"Date spec: {date_spec}; burnin: {burnin}; legion: {lgn_date_spec}")
-
-    #     idx_path = jsn["hedge"]
-    #     fwd_expr = jsn["fwdexpr"]
-    #     logging.info(f"Index path: {idx_path} Fwd expr: {fwd_expr}")
-    #     score_expr = "score.expr" in jsn and jsn["score.expr"] or ""
-    #     tse = trans_score_expr(score_expr)
-    #     logging.info(f"Score expr: {score_expr}; translate score expr: {tse}")
-
-    #     self.lgn = Legion(root.split(";"), debug=False)
-    #     logging.debug(f"Legion root {root} opened")
-
-    #     self.loader = self.lgn.loader(lgn_date_spec, univ=univ, freq=freq)
-
-    #     self.loaded_vs["na/na"] = self.loader["=na"]
-
-    #     self.graph = Wave()
-    #     shape = tuple(map(len, self.loader.dims()))
-    #     logging.info(f"Data dimension: {str(shape)}")
-    #     self.graph.shape = shape
-
-    #     self.ready = True
-    #     return self.jsn
 
 
     def factor(self, raw_exprs):
@@ -833,4 +568,3 @@ class WaveFactor:
             jsn['exprs'][expr2idx[expr_name]][metric] = ktd[:,:,self.jsn['burn']:].flatten(order="F").tolist()
 
         return jsn
-
