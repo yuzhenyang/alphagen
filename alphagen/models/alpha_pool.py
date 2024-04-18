@@ -81,6 +81,7 @@ class AlphaPool(AlphaPoolBase):
         self._add_factor(expr, ic_ret, ic_mut)
         if self.size > 1:
             new_weights = self._optimize(alpha=self.l1_alpha, lr=5e-4, n_iter=500)
+            print(sorted(new_weights, reverse=True))
             worst_idx = np.argmin(np.abs(new_weights))
             if worst_idx != self.capacity:
                 self.weights[:self.size] = new_weights
@@ -170,8 +171,12 @@ class AlphaPool(AlphaPoolBase):
             return single_ic, None
 
         mutual_ics = []
+        if self.size <= 0:
+            return single_ic, mutual_ics
+
+        corrs = self.calculator.calc_mutual_ICs(expr, self.exprs[:self.size])
         for i in range(self.size):
-            mutual_ic = self.calculator.calc_mutual_IC(expr, self.exprs[i])
+            mutual_ic = corrs[i]
             if ic_mut_threshold is not None and mutual_ic > ic_mut_threshold:
                 return single_ic, None
             mutual_ics.append(mutual_ic)

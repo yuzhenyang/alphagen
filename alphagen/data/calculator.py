@@ -22,6 +22,10 @@ class AlphaCalculator(metaclass=ABCMeta):
         'Calculate IC between two alphas.'
 
     @abstractmethod
+    def calc_mutual_ICs(self, expr1: Expression, exprs: List[Expression]) -> List[float]:
+        'Calculate IC between for expr1 to exprs'
+
+    @abstractmethod
     def calc_pool_IC_ret(self, exprs: List[Expression], weights: List[float]) -> float:
         'First combine the alphas linearly,'
         'then Calculate IC between the linear combination and a predefined target.'

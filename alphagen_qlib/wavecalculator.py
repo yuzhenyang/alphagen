@@ -56,7 +56,6 @@ class WaveCalculator(AlphaCalculator):
     SCORER = 'ic.mean'
 
     def __init__(self, **kwargs):
-        # pdb.set_trace()
         self.wavecalc = WaveFactor(**kwargs)
 
     def _calc_alpha(self, expr: Expression) -> KTD:
@@ -67,7 +66,7 @@ class WaveCalculator(AlphaCalculator):
         if len(ret['exprs']) > 0 and field in ret['exprs'][0]:
             return ret['exprs'][0][field]
         else:
-            return np.nan
+            return 0.0
 
     def _build_fac_exprs(self, expr1: Expression, expr2: Expression) -> str:
         axpr1, axpr2 = Qlib2Wave.waveexpr(expr1), Qlib2Wave.waveexpr(expr2)
@@ -77,24 +76,37 @@ class WaveCalculator(AlphaCalculator):
         tfac2 = f"{fac2} <- {axpr2}"
         return [fac1, fac2], [tfac1, tfac2]
 
+    def _build_fac_expr(self, expr1: Expression, index, euid: str) -> str:
+        return f"{euid}.f{index} <- {Qlib2Wave.waveexpr(expr1)}"
+
+    def _get_fac_name(self, expr):
+        return expr.split(' <- ')[0]
+
     def _corr(self, x, y):
         valid_index = ~np.isnan(x) & ~np.isnan(y)
         valid_x = x[valid_index]
         valid_y = y[valid_index]
         corr = np.corrcoef(valid_x.reshape((-1)), valid_y.reshape((-1)))[0, 1]
-        return corr
+        return np.isnan(corr) and 1.0 or corr
 
     def calc_mutual_IC(self, expr1: Expression, expr2: Expression) -> float:
-        # pdb.set_trace()
         facs, exprs = self._build_fac_exprs(expr1, expr2)
         ret = self.wavecalc.rawfactor(exprs)
         corr = self._corr(ret[facs[0]], ret[facs[1]])
         print(f"calc_mutual_IC corr: {corr} {str(expr1)} - {str(expr2)}")
         return corr
 
+    def calc_mutual_ICs(self, expr1: Expression, exprs: List[Expression]) -> List[float]:
+        euid = genuid('alpgen.')
+        wexprs = [self._build_fac_expr(expr, i+1, euid) for i, expr in enumerate(exprs)]
+        wexprs.insert(0, self._build_fac_expr(expr1, 0, euid))
+        wfacts = [self._get_fac_name(e) for e in wexprs]
+        rets = self.wavecalc.rawfactor(wexprs)
+        corrs = [self._corr(rets[wfacts[0]], rets[fac]) for fac in wfacts[1:]]
+        return corrs
+
     def calc_single_IC_ret(self, expr: Expression, custom_vs = None) -> float:
         e = [Qlib2Wave.waveexpr(expr)]
-        print(e)
         ret = self.wavecalc.score(e, metrics=['IC'])
         return self._get_result(ret)
 
